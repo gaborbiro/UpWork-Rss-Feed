@@ -3,6 +3,8 @@ package app.gaborbiro.pullrss
 import android.content.Context
 import android.os.Bundle
 import android.text.Html
+import android.text.method.LinkMovementMethod
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.work.*
 import app.gaborbiro.pullrss.model.Job
@@ -29,8 +31,25 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
-        LocalNotificationManager.hideNotifications()
+        unread_toggle.isChecked = AppPreferences.showAllEnabled
+        unread_toggle.setOnCheckedChangeListener { _, on ->
+            loadJobs(showAll = on)
+            AppPreferences.showAllEnabled = on
+        }
+        content.movementMethod = LinkMovementMethod.getInstance()
+        loadJobs(showAll = AppPreferences.showAllEnabled)
+    }
 
+    override fun onPause() {
+        super.onPause()
+        disposable?.dispose()
+    }
+
+    private fun loadJobs(showAll: Boolean = false) {
+        content.visibility = View.GONE
+        progress_indicator.visibility = View.VISIBLE
+        disposable?.dispose()
+        LocalNotificationManager.hideNotifications()
         disposable = Maybe.create<RssFeed> { emitter ->
             try {
                 RssReader.read(URL(UPWORK_RSS_URL))?.let {
@@ -40,31 +59,38 @@ class MainActivity : AppCompatActivity() {
                 emitter.onError(t)
             }
             emitter.onComplete()
-        }.subscribeOn(Schedulers.io())
+        }
+            .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
+            .doOnTerminate {
+                content.visibility = View.VISIBLE
+                progress_indicator.visibility = View.GONE
+            }
             .subscribe({
-                val str = it.rssItems.filter { it.pubDate!!.time > AppPreferences.lastSeenDate }
-                    .sortedByDescending { it.pubDate }
+                val items = if (showAll) {
+                    it.rssItems
+                } else {
+                    it.rssItems.filter { it.pubDate!!.time > AppPreferences.lastSeenDate }
+                }
+                val str = items.sortedByDescending { it.pubDate }
                     .joinToString(separator = "<br><br>") {
                         "<b>Title:</b> " + it.title + "<br><b>Description:</b> " + it.description + "<br>"
                     }
-                content.text = Html.fromHtml(str, 0)
-                if (it.rssItems.isNotEmpty()) {
+                if (str.isNotEmpty()) {
+                    content.text = Html.fromHtml(str, 0)
+                } else {
+                    content.text = "No new jobs"
+                }
+                if (it.rssItems.isNotEmpty() && !showAll) {
                     AppPreferences.lastSeenDate =
                         it.rssItems.maxBy { it.pubDate!! }!!.pubDate!!.time
                     AppPreferences.lastNotifiedDate = AppPreferences.lastSeenDate
                 }
-
                 startBackgroundPolling()
             }, {
                 it.printStackTrace()
                 it.message?.let(this::longToast) ?: toast("Oops. Something went wrong!")
             })
-    }
-
-    override fun onPause() {
-        super.onPause()
-        disposable?.dispose()
     }
 
     private fun startBackgroundPolling() {
@@ -86,9 +112,11 @@ class PullRssWorker(appContext: Context, workerParams: WorkerParameters) :
     override fun doWork(): Result {
         try {
             RssReader.read(URL(UPWORK_RSS_URL))?.let { rssFeed ->
-                val newJobs =
+                val newJobs = if (AppPreferences.showAllEnabled) {
+                    rssFeed.rssItems
+                } else {
                     rssFeed.rssItems.filter { it.pubDate!!.time > AppPreferences.lastNotifiedDate }
-                        .map(JobMapper::map)
+                }.map(JobMapper::map)
                 if (newJobs.isNotEmpty()) {
                     AppPreferences.lastNotifiedDate =
                         rssFeed.rssItems.maxBy { it.pubDate!! }!!.pubDate!!.time
@@ -98,7 +126,8 @@ class PullRssWorker(appContext: Context, workerParams: WorkerParameters) :
                         LocalNotificationManager.showNewJobNotification(
                             id = index,
                             title = job.title,
-                            messageBody = formatDescription(job)
+                            messageBody = formatDescription(job),
+                            subscribeUrl = job.link
                         )
                     }
                 return Result.success()
@@ -111,13 +140,20 @@ class PullRssWorker(appContext: Context, workerParams: WorkerParameters) :
         }
     }
 
+    override fun onStopped() {
+        super.onStopped()
+        LocalNotificationManager.hideNotifications()
+    }
+
     private fun formatDescription(job: Job): String {
         return StringBuilder().apply {
-            append(job.description)
+            append(job.pubDate.toString())
             appendln()
-            job.budget?.let { append("\nBudget: ${job.budget}") }
-            job.skills?.let { append("\nSkills: ${job.skills}") }
-            job.country?.let { append("\nCountry: ${job.country}") }
+            append("${job.budget?:"Hourly"}: ")
+            append(Html.fromHtml(job.description, 0))
+            appendln()
+            job.skills?.let { append("Skills: ${job.skills}") }
+            job.country?.let { append(", from ${job.country}") }
             job.category?.let { append("\nCategory: ${Html.fromHtml(job.category, 0)}") }
         }.toString()
     }

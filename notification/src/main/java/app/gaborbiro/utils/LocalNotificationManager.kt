@@ -3,6 +3,7 @@ package app.gaborbiro.utils
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
@@ -27,15 +28,35 @@ object LocalNotificationManager {
     fun showNewJobNotification(
         id: Int,
         title: String?,
-        messageBody: String?
+        messageBody: String?,
+        subscribeUrl: String? = null
     ) {
+        val subscribeIntent =
+            subscribeUrl?.let {
+                PendingIntent.getActivity(
+                    appContext,
+                    1,
+                    Intent(Intent.ACTION_VIEW, Uri.parse(subscribeUrl)),
+                    0
+                )
+            }
         notificationManager.notify(
             "job_$id", id, buildNotification(
                 pendingIntent = getLaunchIntent(),
                 channel = CHANNEL_NEW_JOBS,
                 title = title,
-                message = messageBody
-            ).build()
+                message = messageBody,
+                autoCancel = false
+            ).apply {
+                subscribeIntent?.let {
+                    addAction(
+                        R.drawable.ic_launcher_foreground,
+                        "Subscribe",
+                        it
+                    )
+                }
+            }
+                .build()
         )
     }
 

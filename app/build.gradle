@@ -32,9 +32,15 @@ android {
 
 dependencies {
     implementation project(':zcore')
+    implementation project(':rss')
 
     implementation kotlinDeps.stdlib
     implementation support.appCompat
     implementation support.constraintLayout
     implementation support.material
+    implementation anko.common
+    implementation rxjava.core
+    implementation rxjava.android
+
+    implementation prefsUtil
 }

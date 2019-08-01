@@ -1,4 +1,4 @@
-package app.gaborbiro.pullrss.model
+package app.gaborbiro.pollrss.model
 
 import java.util.*
 

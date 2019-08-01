@@ -1,4 +1,4 @@
-package app.gaborbiro.pullrss
+package app.gaborbiro.pollrss
 
 import android.content.Context
 import android.os.Bundle
@@ -6,10 +6,13 @@ import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.work.*
-import app.gaborbiro.pullrss.model.Job
-import app.gaborbiro.pullrss.rss.RssFeed
-import app.gaborbiro.pullrss.rss.RssReader
+import androidx.work.Constraints
+import androidx.work.PeriodicWorkRequest
+import androidx.work.WorkManager
+import androidx.work.WorkerParameters
+import app.gaborbiro.pollrss.model.Job
+import app.gaborbiro.pollrss.rss.RssFeed
+import app.gaborbiro.pollrss.rss.RssReader
 import app.gaborbiro.utils.LocalNotificationManager
 import io.reactivex.Maybe
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -38,6 +41,11 @@ class MainActivity : AppCompatActivity() {
         }
         content.movementMethod = LinkMovementMethod.getInstance()
         loadJobs(showAll = AppPreferences.showAllEnabled)
+
+        swipe_refresh_layout.setOnRefreshListener {
+            loadJobs(showAll = AppPreferences.showAllEnabled)
+            swipe_refresh_layout.isRefreshing = true
+        }
     }
 
     override fun onPause() {
@@ -46,8 +54,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadJobs(showAll: Boolean = false) {
-        content.visibility = View.GONE
-        progress_indicator.visibility = View.VISIBLE
+        if (!swipe_refresh_layout.isRefreshing) {
+            progress_indicator.visibility = View.VISIBLE
+            content.visibility = View.GONE
+        }
         disposable?.dispose()
         LocalNotificationManager.hideNotifications()
         disposable = Maybe.create<RssFeed> { emitter ->
@@ -65,6 +75,7 @@ class MainActivity : AppCompatActivity() {
             .doOnTerminate {
                 content.visibility = View.VISIBLE
                 progress_indicator.visibility = View.GONE
+                swipe_refresh_layout.isRefreshing = false
             }
             .subscribe({
                 val items = if (showAll) {
@@ -94,19 +105,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startBackgroundPolling() {
+        WorkManager.getInstance().cancelAllWorkByTag("PollRss")
         val constraints = Constraints.Builder()
             .setRequiresBatteryNotLow(true)
-            .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
         val saveRequest =
-            PeriodicWorkRequest.Builder(PullRssWorker::class.java, Duration.ofMinutes(15))
+            PeriodicWorkRequest.Builder(PollRssWorker::class.java, Duration.ofMinutes(15))
+                .addTag("PollRss")
                 .setConstraints(constraints)
                 .build()
         WorkManager.getInstance().enqueue(saveRequest)
     }
 }
 
-class PullRssWorker(appContext: Context, workerParams: WorkerParameters) :
+class PollRssWorker(appContext: Context, workerParams: WorkerParameters) :
     androidx.work.Worker(appContext, workerParams) {
 
     override fun doWork(): Result {
@@ -149,7 +161,7 @@ class PullRssWorker(appContext: Context, workerParams: WorkerParameters) :
         return StringBuilder().apply {
             append(job.pubDate.toString())
             appendln()
-            append("${job.budget?:"Hourly"}: ")
+            append("${job.budget ?: "Hourly"}: ")
             append(Html.fromHtml(job.description, 0))
             appendln()
             job.skills?.let { append("Skills: ${job.skills}") }

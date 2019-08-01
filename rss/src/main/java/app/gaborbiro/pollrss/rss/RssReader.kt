@@ -1,4 +1,4 @@
-package app.gaborbiro.pullrss.rss
+package app.gaborbiro.pollrss.rss
 
 import org.xml.sax.InputSource
 import org.xml.sax.SAXException

@@ -4,14 +4,14 @@ apply from: '../config-android.gradle'
 android {
     signingConfigs {
         debugConfig {
-            storeFile file('../pullrss-dev-key.jks')
-            storePassword 'pullrss'
-            keyAlias 'pullrss-dev'
-            keyPassword 'pullrss'
+            storeFile file('../pollrss-dev-key.jks')
+            storePassword 'pollrss'
+            keyAlias 'pollrss-dev'
+            keyPassword 'pollrss'
         }
     }
     defaultConfig {
-        applicationId 'app.gaborbiro.pullrss'
+        applicationId 'app.gaborbiro.pollrss'
         multiDexEnabled true
     }
     buildTypes {

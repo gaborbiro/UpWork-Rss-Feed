@@ -1,4 +1,4 @@
-package app.gaborbiro.pullrss
+package app.gaborbiro.pollrss
 
 import android.app.Application
 import app.gaborbiro.utils.NavigatorProvider

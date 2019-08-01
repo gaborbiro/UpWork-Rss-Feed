@@ -11,7 +11,7 @@ import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import app.gaborbiro.pullrss.AppContextProvider
+import app.gaborbiro.pollrss.AppContextProvider
 import com.piottechnologies.stationmaster.notifications.R
 
 object LocalNotificationManager {

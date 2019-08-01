@@ -1,7 +1,7 @@
-package app.gaborbiro.pullrss
+package app.gaborbiro.pollrss
 
-import app.gaborbiro.pullrss.model.Job
-import app.gaborbiro.pullrss.rss.RssItem
+import app.gaborbiro.pollrss.model.Job
+import app.gaborbiro.pollrss.rss.RssItem
 
 object JobMapper {
 

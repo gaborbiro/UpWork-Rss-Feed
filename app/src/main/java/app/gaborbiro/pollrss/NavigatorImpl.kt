@@ -1,7 +1,7 @@
-package app.gaborbiro.pullrss
+package app.gaborbiro.pollrss
 
 import android.content.Intent
-import app.gaborbiro.pullrss.AppContextProvider.appContext
+import app.gaborbiro.pollrss.AppContextProvider.appContext
 import app.gaborbiro.utils.Navigator
 
 class NavigatorImpl : Navigator {

@@ -1,4 +1,4 @@
-package app.gaborbiro.pullrss.rss
+package app.gaborbiro.pollrss.rss
 
 import android.annotation.SuppressLint
 import org.xml.sax.Attributes

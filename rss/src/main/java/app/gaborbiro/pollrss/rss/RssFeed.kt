@@ -1,20 +1,24 @@
-package app.gaborbiro.pullrss.rss
+package app.gaborbiro.pollrss.rss
 
 import android.os.Parcelable
+import kotlinx.android.parcel.Parcelize
 import java.text.ParseException
 import java.text.SimpleDateFormat
-import kotlinx.android.parcel.Parcelize
 import java.util.*
 
 @Parcelize
-data class RssItem(
-    var feed: RssFeed? = null,
+class RssFeed(
     var title: String? = null,
     var link: String? = null,
-    var pubDate: Date? = null,
     var description: String? = null,
-    var content: String? = null
-) : Comparable<RssItem>, Parcelable {
+    var language: String? = null,
+    var pubDate: Date? = null,
+    var rssItems: List<RssItem> = mutableListOf()
+) : Parcelable {
+
+    fun addRssItem(rssItem: RssItem) {
+        (rssItems as MutableList).add(rssItem)
+    }
 
     fun setPubDate(pubDate: String) {
         try {
@@ -22,14 +26,6 @@ data class RssItem(
             this.pubDate = dateFormat.parse(pubDate)
         } catch (e: ParseException) {
             e.printStackTrace()
-        }
-    }
-
-    override fun compareTo(other: RssItem): Int {
-        return if (pubDate != null && other.pubDate != null) {
-            pubDate!!.compareTo(other.pubDate)
-        } else {
-            0
         }
     }
 }

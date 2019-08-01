@@ -1,0 +1,40 @@
+apply plugin: 'com.android.application'
+apply from: '../config-android.gradle'
+
+android {
+    signingConfigs {
+        debugConfig {
+            storeFile file('../pullrss-dev-key.jks')
+            storePassword 'pullrss'
+            keyAlias 'pullrss-dev'
+            keyPassword 'pullrss'
+        }
+    }
+    defaultConfig {
+        applicationId 'app.gaborbiro.pullrss'
+        multiDexEnabled true
+    }
+    buildTypes {
+        debug {
+            minifyEnabled false
+            shrinkResources false
+            applicationIdSuffix ".debug"
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debugConfig
+        }
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation project(':zcore')
+
+    implementation kotlinDeps.stdlib
+    implementation support.appCompat
+    implementation support.constraintLayout
+    implementation support.material
+}

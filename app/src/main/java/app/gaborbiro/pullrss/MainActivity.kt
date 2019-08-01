@@ -1,10 +1,14 @@
 package app.gaborbiro.pullrss
 
+import android.content.Context
 import android.os.Bundle
 import android.text.Html
 import androidx.appcompat.app.AppCompatActivity
+import androidx.work.*
+import app.gaborbiro.pullrss.model.Job
 import app.gaborbiro.pullrss.rss.RssFeed
 import app.gaborbiro.pullrss.rss.RssReader
+import app.gaborbiro.utils.LocalNotificationManager
 import io.reactivex.Maybe
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
@@ -14,6 +18,7 @@ import kotlinx.android.synthetic.main.content_main.*
 import org.jetbrains.anko.longToast
 import org.jetbrains.anko.toast
 import java.net.URL
+import java.time.Duration
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,6 +28,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
+
+        LocalNotificationManager.hideNotifications()
 
         disposable = Maybe.create<RssFeed> { emitter ->
             try {
@@ -37,11 +44,18 @@ class MainActivity : AppCompatActivity() {
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
                 val str = it.rssItems.filter { it.pubDate!!.time > AppPreferences.lastSeenDate }
+                    .sortedByDescending { it.pubDate }
                     .joinToString(separator = "<br><br>") {
                         "<b>Title:</b> " + it.title + "<br><b>Description:</b> " + it.description + "<br>"
                     }
                 content.text = Html.fromHtml(str, 0)
-                AppPreferences.lastSeenDate = it.rssItems.maxBy { it.pubDate!! }!!.pubDate!!.time
+                if (it.rssItems.isNotEmpty()) {
+                    AppPreferences.lastSeenDate =
+                        it.rssItems.maxBy { it.pubDate!! }!!.pubDate!!.time
+                    AppPreferences.lastNotifiedDate = AppPreferences.lastSeenDate
+                }
+
+                startBackgroundPolling()
             }, {
                 it.printStackTrace()
                 it.message?.let(this::longToast) ?: toast("Oops. Something went wrong!")
@@ -51,6 +65,61 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         disposable?.dispose()
+    }
+
+    private fun startBackgroundPolling() {
+        val constraints = Constraints.Builder()
+            .setRequiresBatteryNotLow(true)
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+        val saveRequest =
+            PeriodicWorkRequest.Builder(PullRssWorker::class.java, Duration.ofMinutes(15))
+                .setConstraints(constraints)
+                .build()
+        WorkManager.getInstance().enqueue(saveRequest)
+    }
+}
+
+class PullRssWorker(appContext: Context, workerParams: WorkerParameters) :
+    androidx.work.Worker(appContext, workerParams) {
+
+    override fun doWork(): Result {
+        try {
+            RssReader.read(URL(UPWORK_RSS_URL))?.let { rssFeed ->
+                val newJobs =
+                    rssFeed.rssItems.filter { it.pubDate!!.time > AppPreferences.lastNotifiedDate }
+                        .map(JobMapper::map)
+                if (newJobs.isNotEmpty()) {
+                    AppPreferences.lastNotifiedDate =
+                        rssFeed.rssItems.maxBy { it.pubDate!! }!!.pubDate!!.time
+                }
+                newJobs.sortedByDescending { it.pubDate }.take(5).reversed()
+                    .forEachIndexed { index, job ->
+                        LocalNotificationManager.showNewJobNotification(
+                            id = index,
+                            title = job.title,
+                            messageBody = formatDescription(job)
+                        )
+                    }
+                return Result.success()
+            } ?: run {
+                return Result.failure()
+            }
+        } catch (t: Throwable) {
+            t.printStackTrace()
+            return Result.failure()
+        }
+    }
+
+    private fun formatDescription(job: Job): String {
+        return StringBuilder().apply {
+            append(job.description)
+            appendln()
+            job.budget?.let { append("\nBudget: ${job.budget}") }
+            job.skills?.let { append("\nSkills: ${job.skills}") }
+            job.country?.let { append("\nCountry: ${job.country}") }
+            job.category?.let { append("\nCategory: ${Html.fromHtml(job.category, 0)}") }
+        }.toString()
     }
 }
 

@@ -1,0 +1,10 @@
+apply plugin: 'com.android.library'
+apply from: '../config-android.gradle'
+
+dependencies {
+    implementation project(':zcore')
+    implementation project(':navigator')
+
+    implementation kotlinDeps.stdlib
+    implementation support.coreKtx
+}

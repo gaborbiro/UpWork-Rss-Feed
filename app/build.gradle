@@ -33,6 +33,8 @@ android {
 dependencies {
     implementation project(':zcore')
     implementation project(':rss')
+    implementation project(':navigator')
+    implementation project(':notification')
 
     implementation kotlinDeps.stdlib
     implementation support.appCompat
@@ -43,4 +45,5 @@ dependencies {
     implementation rxjava.android
 
     implementation prefsUtil
+    implementation "android.arch.work:work-runtime:1.0.1"
 }

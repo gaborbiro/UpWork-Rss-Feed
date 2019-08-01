@@ -1,1 +1,1 @@
-include ':app', ':zcore', ':rss'
+include ':app', ':zcore', ':rss', ':notification', ':navigator'

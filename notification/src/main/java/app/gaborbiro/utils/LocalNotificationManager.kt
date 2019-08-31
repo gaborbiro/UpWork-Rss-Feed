@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
@@ -13,6 +14,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import app.gaborbiro.pollrss.AppContextProvider
 import com.piottechnologies.stationmaster.notifications.R
+
 
 object LocalNotificationManager {
 
@@ -44,9 +46,11 @@ object LocalNotificationManager {
                     "View in browser",
                     getViewIntent(url)
                 )
+                val shareActionName =
+                    if (isPackageInstalled("com.pushbullet.android")) "Push" else "Share"
                 addAction(
                     R.drawable.ic_launcher_foreground,
-                    "Push",
+                    shareActionName,
                     getShareIntent(url)
                 )
             }.build().also {
@@ -126,6 +130,16 @@ object LocalNotificationManager {
             )
             notificationManager.createNotificationChannel(alertChannel)
         }
+    }
+
+    private fun isPackageInstalled(packageName: String): Boolean {
+        var found = true
+        try {
+            appContext.packageManager.getPackageInfo(packageName, 0)
+        } catch (e: PackageManager.NameNotFoundException) {
+            found = false
+        }
+        return found
     }
 }
 

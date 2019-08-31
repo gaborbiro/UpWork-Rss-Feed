@@ -11,7 +11,6 @@ import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import app.gaborbiro.pollrss.model.Job
-import app.gaborbiro.pollrss.rss.RssFeed
 import app.gaborbiro.pollrss.rss.RssReader
 import app.gaborbiro.utils.LocalNotificationManager
 import io.reactivex.Maybe
@@ -34,16 +33,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
-        unread_toggle.isChecked = AppPreferences.showAllEnabled
-        unread_toggle.setOnCheckedChangeListener { _, on ->
-            loadJobs(showAll = on)
-            AppPreferences.showAllEnabled = on
-        }
         content.movementMethod = LinkMovementMethod.getInstance()
-        loadJobs(showAll = AppPreferences.showAllEnabled)
+        loadJobs()
 
         swipe_refresh_layout.setOnRefreshListener {
-            loadJobs(showAll = AppPreferences.showAllEnabled)
+            loadJobs()
             swipe_refresh_layout.isRefreshing = true
         }
     }
@@ -53,17 +47,17 @@ class MainActivity : AppCompatActivity() {
         disposable?.dispose()
     }
 
-    private fun loadJobs(showAll: Boolean = false) {
+    private fun loadJobs() {
         if (!swipe_refresh_layout.isRefreshing) {
             progress_indicator.visibility = View.VISIBLE
             content.visibility = View.GONE
         }
         disposable?.dispose()
         LocalNotificationManager.hideNotifications()
-        disposable = Maybe.create<RssFeed> { emitter ->
+        disposable = Maybe.create<List<Job>> { emitter ->
             try {
                 RssReader.read(URL(UPWORK_RSS_URL))?.let {
-                    emitter.onSuccess(it)
+                    emitter.onSuccess(it.rssItems.mapNotNull(JobMapper::map))
                 }
             } catch (t: Throwable) {
                 emitter.onError(t)
@@ -77,25 +71,18 @@ class MainActivity : AppCompatActivity() {
                 progress_indicator.visibility = View.GONE
                 swipe_refresh_layout.isRefreshing = false
             }
-            .subscribe({
-                val items = if (showAll) {
-                    it.rssItems
-                } else {
-                    it.rssItems.filter { it.pubDate!!.time > AppPreferences.lastSeenDate }
-                }
-                val str = items.sortedByDescending { it.pubDate }
+            .subscribe({ jobs ->
+                val str = jobs
+                    .filter { AppPreferences.dismissedJobs[it.id] != true }
+                    .sortedByDescending { it.pubDate }
                     .joinToString(separator = "<br><br>") {
-                        "<b>Title:</b> " + it.title + "<br><b>Description:</b> " + it.description + "<br>"
+                        "<b>Title:</b> ${it.title}<br><b>Description:</b> ${it.description}" +
+                                "<br><a href='${it.link}' style='font-size: 24px;'>View in browser</a>"
                     }
                 if (str.isNotEmpty()) {
                     content.text = Html.fromHtml(str, 0)
                 } else {
                     content.text = "No new jobs"
-                }
-                if (it.rssItems.isNotEmpty() && !showAll) {
-                    AppPreferences.lastSeenDate =
-                        it.rssItems.maxBy { it.pubDate!! }!!.pubDate!!.time
-                    AppPreferences.lastNotifiedDate = AppPreferences.lastSeenDate
                 }
                 startBackgroundPolling()
             }, {
@@ -124,19 +111,16 @@ class PollRssWorker(appContext: Context, workerParams: WorkerParameters) :
     override fun doWork(): Result {
         try {
             RssReader.read(URL(UPWORK_RSS_URL))?.let { rssFeed ->
-                val newJobs = if (AppPreferences.showAllEnabled) {
-                    rssFeed.rssItems
-                } else {
-                    rssFeed.rssItems.filter { it.pubDate!!.time > AppPreferences.lastNotifiedDate }
-                }.map(JobMapper::map)
-                if (newJobs.isNotEmpty()) {
-                    AppPreferences.lastNotifiedDate =
-                        rssFeed.rssItems.maxBy { it.pubDate!! }!!.pubDate!!.time
-                }
-                newJobs.sortedByDescending { it.pubDate }.take(5).reversed()
+                rssFeed.rssItems
+                    .mapNotNull(JobMapper::map)
+                    .filter { AppPreferences.dismissedJobs[it.id] != true }
+                    .sortedByDescending { it.pubDate }
+                    .take(5)
+                    .reversed()
                     .forEachIndexed { index, job ->
                         LocalNotificationManager.showNewJobNotification(
-                            id = index,
+                            jobId = job.id,
+                            index = index,
                             title = job.title,
                             messageBody = formatDescription(job),
                             subscribeUrl = job.link

@@ -3,9 +3,10 @@ package app.gaborbiro.pollrss.model
 import java.util.*
 
 class Job(
-    val title: String?,
-    val link: String?,
-    val pubDate: Date?,
+    val id: String,
+    val title: String,
+    val link: String,
+    val pubDate: Date,
     val description: String,
     val budget: String?,
     val category: String?,

@@ -5,7 +5,14 @@ import app.gaborbiro.pollrss.rss.RssItem
 
 object JobMapper {
 
-    fun map(rssItem: RssItem): Job {
+    fun map(rssItem: RssItem): Job? {
+        if (rssItem.guid.isNullOrBlank() ||
+            rssItem.link.isNullOrBlank() ||
+            rssItem.title.isNullOrBlank() ||
+            rssItem.description.isNullOrBlank()
+        ) {
+            return null
+        }
         val description = rssItem.description!!
         var budgetGroups: MatchGroupCollection?
         var categoryGroups: MatchGroupCollection?
@@ -31,9 +38,10 @@ object JobMapper {
                 .replace(Regex("(<[/]?b>)"), "").cleanWS()
         }
         return Job(
-            title = rssItem.title,
-            link = rssItem.link,
-            pubDate = rssItem.pubDate,
+            id = rssItem.guid!!,
+            title = rssItem.title!!,
+            link = rssItem.link!!,
+            pubDate = rssItem.pubDate!!,
             description = shortDescription,
             budget = budgetGroups?.get(1)?.value?.cleanWS(),
             category = categoryGroups?.get(1)?.value?.cleanWS(),

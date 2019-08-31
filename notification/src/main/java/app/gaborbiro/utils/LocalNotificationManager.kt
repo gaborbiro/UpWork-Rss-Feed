@@ -26,7 +26,8 @@ object LocalNotificationManager {
     }
 
     fun showNewJobNotification(
-        id: Int,
+        jobId: String,
+        index: Int,
         title: String?,
         messageBody: String?,
         subscribeUrl: String? = null
@@ -41,7 +42,7 @@ object LocalNotificationManager {
                 )
             }
         notificationManager.notify(
-            "job_$id", id, buildNotification(
+            "job_$index", index, buildNotification(
                 pendingIntent = getLaunchIntent(),
                 channel = CHANNEL_NEW_JOBS,
                 title = title,
@@ -51,12 +52,13 @@ object LocalNotificationManager {
                 subscribeIntent?.let {
                     addAction(
                         R.drawable.ic_launcher_foreground,
-                        "Subscribe",
+                        "View in browser",
                         it
                     )
                 }
+            }.build().also {
+                it.deleteIntent = getDeleteIntent(index, jobId)
             }
-                .build()
         )
     }
 
@@ -71,6 +73,12 @@ object LocalNotificationManager {
             NavigatorProvider.navigator.getMainActivityIntent(),
             0
         )
+    }
+
+    private fun getDeleteIntent(index: Int, jobId: String): PendingIntent {
+        val intent = NavigatorProvider.navigator.getDismissJobIntent()
+        intent.action = ACTION_DISMISS + jobId
+        return PendingIntent.getBroadcast(appContext, 0, intent, 0)
     }
 
     private fun buildNotification(
@@ -116,3 +124,5 @@ object LocalNotificationManager {
 }
 
 val CHANNEL_NEW_JOBS = "New Jobs"
+
+val ACTION_DISMISS = "DISMISS"

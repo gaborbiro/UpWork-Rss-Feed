@@ -13,7 +13,8 @@ data class RssItem(
     var link: String? = null,
     var pubDate: Date? = null,
     var description: String? = null,
-    var content: String? = null
+    var content: String? = null,
+    var guid: String? = null
 ) : Comparable<RssItem>, Parcelable {
 
     fun setPubDate(pubDate: String) {

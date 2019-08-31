@@ -26,21 +26,11 @@ object LocalNotificationManager {
     }
 
     fun showNewJobNotification(
-        jobId: String,
         index: Int,
         title: String?,
         messageBody: String?,
-        subscribeUrl: String? = null
+        url: String
     ) {
-        val subscribeIntent =
-            subscribeUrl?.let {
-                PendingIntent.getActivity(
-                    appContext,
-                    1,
-                    Intent(Intent.ACTION_VIEW, Uri.parse(subscribeUrl)),
-                    0
-                )
-            }
         notificationManager.notify(
             "job_$index", index, buildNotification(
                 pendingIntent = getLaunchIntent(),
@@ -49,15 +39,18 @@ object LocalNotificationManager {
                 message = messageBody,
                 autoCancel = false
             ).apply {
-                subscribeIntent?.let {
-                    addAction(
-                        R.drawable.ic_launcher_foreground,
-                        "View in browser",
-                        it
-                    )
-                }
+                addAction(
+                    R.drawable.ic_launcher_foreground,
+                    "View in browser",
+                    getViewIntent(url)
+                )
+                addAction(
+                    R.drawable.ic_launcher_foreground,
+                    "Push",
+                    getShareIntent(url)
+                )
             }.build().also {
-                it.deleteIntent = getDeleteIntent(index, jobId)
+                it.deleteIntent = getDeleteIntent(url)
             }
         )
     }
@@ -75,9 +68,22 @@ object LocalNotificationManager {
         )
     }
 
-    private fun getDeleteIntent(index: Int, jobId: String): PendingIntent {
+    private fun getViewIntent(url: String) = PendingIntent.getActivity(
+        appContext,
+        1,
+        Intent(Intent.ACTION_VIEW, Uri.parse(url)),
+        0
+    )
+
+    private fun getDeleteIntent(jobId: String): PendingIntent {
         val intent = NavigatorProvider.navigator.getDismissJobIntent()
         intent.action = ACTION_DISMISS + jobId
+        return PendingIntent.getBroadcast(appContext, 0, intent, 0)
+    }
+
+    private fun getShareIntent(jobId: String): PendingIntent {
+        val intent = NavigatorProvider.navigator.getDismissJobIntent()
+        intent.action = ACTION_SHARE + jobId
         return PendingIntent.getBroadcast(appContext, 0, intent, 0)
     }
 
@@ -126,3 +132,4 @@ object LocalNotificationManager {
 val CHANNEL_NEW_JOBS = "New Jobs"
 
 val ACTION_DISMISS = "DISMISS"
+val ACTION_SHARE = "SHARE"

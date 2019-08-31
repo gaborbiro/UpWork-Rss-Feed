@@ -2,6 +2,9 @@ package app.gaborbiro.pollrss
 
 import app.gaborbiro.pollrss.model.Job
 import app.gaborbiro.pollrss.rss.RssItem
+import app.gaborbiro.pollrss.utils.FEED_DATE_TIME_FORMAT
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 object JobMapper {
 
@@ -37,11 +40,12 @@ object JobMapper {
             temp.replace(Regex("(<br[\\s]*[/]?>|[\\n]+)"), "\n")
                 .replace(Regex("(<[/]?b>)"), "").cleanWS()
         }
+        val zonedDateTime = ZonedDateTime.parse(rssItem.pubDate, FEED_DATE_TIME_FORMAT)
         return Job(
             id = rssItem.guid!!,
             title = rssItem.title!!,
             link = rssItem.link!!,
-            pubDate = rssItem.pubDate!!,
+            localDateTime = zonedDateTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime(),
             description = shortDescription,
             budget = budgetGroups?.get(1)?.value?.cleanWS(),
             category = categoryGroups?.get(1)?.value?.cleanWS(),

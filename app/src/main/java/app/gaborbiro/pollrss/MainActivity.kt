@@ -1,19 +1,20 @@
 package app.gaborbiro.pollrss
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.text.Html
-import android.text.TextUtils
 import android.text.method.LinkMovementMethod
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.work.Constraints
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import app.gaborbiro.pollrss.model.Job
-import app.gaborbiro.pollrss.model.exactFormattedTime
-import app.gaborbiro.pollrss.model.simpleFormattedTime
+import app.gaborbiro.pollrss.model.*
 import app.gaborbiro.pollrss.rss.RssReader
 import app.gaborbiro.utils.LocalNotificationManager
 import io.reactivex.Maybe
@@ -26,6 +27,7 @@ import org.jetbrains.anko.longToast
 import org.jetbrains.anko.toast
 import java.net.URL
 import java.time.Duration
+import java.time.ZoneOffset
 
 class MainActivity : AppCompatActivity() {
 
@@ -43,6 +45,42 @@ class MainActivity : AppCompatActivity() {
             loadJobs()
             swipe_refresh_layout.isRefreshing = true
         }
+        AppPreferences.cleanupJobs()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.action_favorites -> {
+                FavoritesActivity.start(this)
+                return true
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.extras.get("com.android.browser.application_id") != BuildConfig.APPLICATION_ID) {
+            return
+        }
+        when (intent.data?.path) {
+            "/$PATH_MARK_READ" -> {
+                val id = intent.data.getQueryParameter(QUERY_PARAM_ID)!!.toLong()
+                AppPreferences.markedAsViewed[id] = true
+                loadJobs()
+            }
+            "/$PATH_FAVORITE" -> {
+                val id = intent.data.getQueryParameter(QUERY_PARAM_ID)!!.toLong()
+                AppPreferences.markedAsViewed[id] = true
+                AppPreferences.favorites.add(id)
+                Toast.makeText(this, "Marked as favorite", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onPause() {
@@ -50,10 +88,9 @@ class MainActivity : AppCompatActivity() {
         disposable?.dispose()
     }
 
-    private fun loadJobs(replace: Boolean = true) {
+    private fun loadJobs() {
         if (!swipe_refresh_layout.isRefreshing) {
             progress_indicator.visibility = View.VISIBLE
-            if (replace) content.visibility = View.GONE
         }
         LocalNotificationManager.hideNotifications()
         disposable?.dispose()
@@ -74,28 +111,32 @@ class MainActivity : AppCompatActivity() {
                 progress_indicator.visibility = View.GONE
                 swipe_refresh_layout.isRefreshing = false
             }
-            .subscribe({ jobs ->
-                val contentStr = jobs
+            .subscribe({ jobs: List<Job> ->
+                jobs.forEach {
+                    AppPreferences.jobs[it.id] = it
+                }
+                val filteredSortedJobs = jobs
                     .filter { AppPreferences.markedAsViewed[it.id] != true }
                     .sortedByDescending { it.localDateTime }
-                    .joinToString(separator = "<br><br>", transform = Job::formatDescriptionForList)
-                if (replace) {
-                    if (contentStr.isNotEmpty()) {
-                        content.text = Html.fromHtml(contentStr, 0)
-                    } else {
-                        content.text = "No new jobs"
-                    }
+                val contentStr = filteredSortedJobs
+                    .joinToString(
+                        separator = "<br><br>",
+                        transform = Job::formatDescriptionForList
+                    )
+                if (contentStr.isNotEmpty()) {
+                    content.text = Html.fromHtml(contentStr, 0)
                 } else {
-                    if (contentStr.isNotEmpty()) {
-                        content.text =
-                            TextUtils.concat(content.text, Html.fromHtml("<br><br>$contentStr", 0))
-                    }
+                    content.text = "No new jobs"
                 }
+                AppPreferences.lastSeenDate =
+                    filteredSortedJobs[0].localDateTime.toInstant(ZoneOffset.UTC)
+                        .toEpochMilli()
                 startBackgroundPolling()
-            }, {
-                it.printStackTrace()
-                it.message?.let(this::longToast) ?: toast("Oops. Something went wrong!")
-            })
+            },
+                {
+                    it.printStackTrace()
+                    it.message?.let(this::longToast) ?: toast("Oops. Something went wrong!")
+                })
     }
 
     private fun startBackgroundPolling() {
@@ -120,16 +161,19 @@ class PollRssWorker(appContext: Context, workerParams: WorkerParameters) :
             RssReader.read(UPWORK_RSS_URL)?.let { rssFeed ->
                 rssFeed.rssItems
                     .mapNotNull(JobMapper::map)
-                    .filter { AppPreferences.markedAsViewed[it.id] != true }
+                    .filter {
+                        AppPreferences.markedAsViewed[it.id] != true && it.localDateTime.toInstant(
+                            ZoneOffset.UTC
+                        ).toEpochMilli() > AppPreferences.lastSeenDate
+                    }
                     .sortedByDescending { it.localDateTime }
                     .take(5)
                     .reversed()
-                    .forEachIndexed { index, job ->
+                    .forEach { job ->
                         LocalNotificationManager.showNewJobNotification(
-                            index = index,
+                            id = job.id,
                             title = job.title,
-                            messageBody = job.formatDescriptionForNotification(),
-                            url = job.link
+                            messageBody = job.formatDescriptionForNotification()
                         )
                     }
                 return Result.success()
@@ -146,27 +190,6 @@ class PollRssWorker(appContext: Context, workerParams: WorkerParameters) :
         super.onStopped()
         LocalNotificationManager.hideNotifications()
     }
-}
-
-private fun Job.formatDescriptionForNotification(): String {
-    val job = this
-    return StringBuilder().apply {
-        append(job.simpleFormattedTime() + ", ")
-        appendln()
-        append("${job.budget ?: "Hourly"}: ")
-        append(Html.fromHtml(job.description, 0))
-        appendln()
-        job.skills?.let { append("Skills: ${job.skills}") }
-        job.country?.let { append(", from ${job.country}") }
-        job.category?.let { append("\nCategory: ${Html.fromHtml(job.category, 0)}") }
-    }.toString()
-}
-
-private fun Job.formatDescriptionForList(): String {
-    return "<b>Title:</b> ${this.title}" +
-            "<br><b>Description:</b> ${this.description}" +
-            "<br><b>Posted:</b> ${this.exactFormattedTime()}" +
-            "<br><a href='${this.link}'>View in browser</a>"
 }
 
 private val UPWORK_RSS_URL =

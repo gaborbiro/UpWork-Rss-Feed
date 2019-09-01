@@ -7,6 +7,6 @@ import app.gaborbiro.utils.Navigator
 class NavigatorImpl : Navigator {
     override fun getMainActivityIntent() = Intent(appContext, MainActivity::class.java)
 
-    override fun getDismissJobIntent() =
+    override fun getBroadcastIntent() =
         Intent(appContext, NotificationBroadcastReceiver::class.java)
 }

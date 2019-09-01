@@ -42,7 +42,7 @@ object JobMapper {
         }
         val zonedDateTime = ZonedDateTime.parse(rssItem.pubDate, FEED_DATE_TIME_FORMAT)
         return Job(
-            id = rssItem.guid!!,
+            id = zonedDateTime.toInstant().toEpochMilli(),
             title = rssItem.title!!,
             link = rssItem.link!!,
             localDateTime = zonedDateTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime(),

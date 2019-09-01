@@ -2,9 +2,15 @@ package app.gaborbiro.pollrss.utils
 
 import app.gaborbiro.pollrss.AppContextProvider
 import app.gaborbiro.pollrss.R
+import com.google.gson.TypeAdapter
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+
 
 val DATE_TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("H:mma, dd MMM")
 val FEED_DATE_TIME_FORMAT: DateTimeFormatter =
@@ -23,5 +29,23 @@ fun LocalDateTime.simpleFormattedTime(): String {
         else -> AppContextProvider.appContext.resources.getQuantityString(
             R.plurals.days_ago, timePast.toDays().toInt(), timePast.toDays()
         )
+    }
+}
+
+class LocalDateTimeAdapter : TypeAdapter<LocalDateTime>() {
+
+    override fun write(writer: JsonWriter, value: LocalDateTime) {
+        writer.beginObject()
+        writer.name("epochToMilli").value(value.toInstant(ZoneOffset.UTC).toEpochMilli())
+        writer.endObject()
+    }
+
+    override fun read(reader: JsonReader): LocalDateTime {
+        reader.beginObject()
+        reader.hasNext()
+        reader.nextName()
+        val result = LocalDateTime.ofInstant(Instant.ofEpochMilli(reader.nextLong()), ZoneOffset.UTC)
+        reader.endObject()
+        return result
     }
 }

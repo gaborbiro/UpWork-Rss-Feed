@@ -37,6 +37,7 @@ dependencies {
     implementation project(':notification')
 
     implementation kotlinDeps.stdlib
+    implementation kotlinDeps.reflect
     implementation support.appCompat
     implementation support.constraintLayout
     implementation support.material
@@ -44,6 +45,9 @@ dependencies {
     implementation rxjava.core
     implementation rxjava.android
 
+
+    implementation gson
     implementation prefsUtil
+    implementation "com.google.android:flexbox:1.1.0"
     implementation "android.arch.work:work-runtime:1.0.1"
 }

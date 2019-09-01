@@ -28,13 +28,12 @@ object LocalNotificationManager {
     }
 
     fun showNewJobNotification(
-        index: Int,
+        id: Long,
         title: String?,
-        messageBody: String?,
-        url: String
+        messageBody: String?
     ) {
         notificationManager.notify(
-            "job_$index", index, buildNotification(
+            id.toInt(), buildNotification(
                 pendingIntent = getLaunchIntent(),
                 channel = CHANNEL_NEW_JOBS,
                 title = title,
@@ -43,24 +42,31 @@ object LocalNotificationManager {
             ).apply {
                 addAction(
                     R.drawable.ic_launcher_foreground,
-                    "View in browser",
-                    getViewIntent(url)
+                    "Mark as read",
+                    getMarkReadIntent(id)
                 )
                 val shareActionName =
                     if (isPackageInstalled("com.pushbullet.android")) "Push" else "Share"
                 addAction(
                     R.drawable.ic_launcher_foreground,
                     shareActionName,
-                    getShareIntent(url)
+                    getShareIntent(id)
                 )
-            }.build().also {
-                it.deleteIntent = getDeleteIntent(url)
-            }
+                addAction(
+                    R.drawable.ic_launcher_foreground,
+                    "Favorite",
+                    getFavoriteIntent(id)
+                )
+            }.build()
         )
     }
 
     fun hideNotifications() {
         notificationManager.cancelAll()
+    }
+
+    fun hideNotification(id: Long) {
+        notificationManager.cancel(id.toInt())
     }
 
     private fun getLaunchIntent(): PendingIntent {
@@ -72,23 +78,28 @@ object LocalNotificationManager {
         )
     }
 
-    private fun getViewIntent(url: String) = PendingIntent.getActivity(
+    private fun getViewIntent(link: String) = PendingIntent.getActivity(
         appContext,
         1,
-        Intent(Intent.ACTION_VIEW, Uri.parse(url)),
+        Intent(Intent.ACTION_VIEW, Uri.parse(link)),
         0
     )
 
-    private fun getDeleteIntent(jobId: String): PendingIntent {
-        val intent = NavigatorProvider.navigator.getDismissJobIntent()
-        intent.action = ACTION_DISMISS + jobId
-        return PendingIntent.getBroadcast(appContext, 0, intent, 0)
-    }
+    private fun getMarkReadIntent(id: Long) =
+        getBroadcastIntent(ACTION_MARK_READ + id)
 
-    private fun getShareIntent(jobId: String): PendingIntent {
-        val intent = NavigatorProvider.navigator.getDismissJobIntent()
-        intent.action = ACTION_SHARE + jobId
-        return PendingIntent.getBroadcast(appContext, 0, intent, 0)
+    private fun getShareIntent(id: Long) =
+        getBroadcastIntent(ACTION_SHARE + id)
+
+    private fun getFavoriteIntent(id: Long) =
+        getBroadcastIntent(ACTION_FAVORITE + id)
+
+    private fun getBroadcastIntent(action: String): PendingIntent {
+        return NavigatorProvider.navigator.getBroadcastIntent().apply {
+            this.action = action
+        }.let {
+            PendingIntent.getBroadcast(appContext, 0, it, 0)
+        }
     }
 
     private fun buildNotification(
@@ -145,5 +156,6 @@ object LocalNotificationManager {
 
 val CHANNEL_NEW_JOBS = "New Jobs"
 
-val ACTION_DISMISS = "DISMISS"
+val ACTION_MARK_READ = "MARK_READ"
 val ACTION_SHARE = "SHARE"
+val ACTION_FAVORITE = "FAVORITE"

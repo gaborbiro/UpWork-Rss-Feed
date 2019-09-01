@@ -21,8 +21,8 @@ object AppPreferences {
         }
     }
 
-    var markedAsViewed: MutableMap<Long, Boolean> by prefsUtil.mutableDelegate(
-        PREF_MARKED_AS_VIEWED,
+    var markedAsRead: MutableMap<Long, Boolean> by prefsUtil.mutableDelegate(
+        PREF_MARKED_AS_READ,
         mutableMapOf<Long, Boolean>()
     )
 
@@ -31,5 +31,5 @@ object AppPreferences {
 
 private const val PREF_FAVORITES = "FAVORITES"
 private const val PREF_JOBS = "JOBS"
-private const val PREF_MARKED_AS_VIEWED = "MARKED_AS_VIEWED"
+private const val PREF_MARKED_AS_READ = "MARKED_AS_READ"
 private const val PREF_LAST_SEEN_DATE = "LAST_SEEN_DATE"

@@ -1,4 +1,4 @@
-package app.gaborbiro.pollrss
+package app.gaborbiro.pollrss.data
 
 import app.gaborbiro.pollrss.model.Job
 import app.gaborbiro.pollrss.rss.RssItem

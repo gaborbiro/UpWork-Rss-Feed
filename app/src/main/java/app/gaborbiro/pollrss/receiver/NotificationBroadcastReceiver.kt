@@ -1,10 +1,11 @@
-package app.gaborbiro.pollrss
+package app.gaborbiro.pollrss.receiver
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
+import app.gaborbiro.pollrss.AppPreferences
+import app.gaborbiro.pollrss.utils.share
 import app.gaborbiro.utils.ACTION_FAVORITE
 import app.gaborbiro.utils.ACTION_MARK_READ
 import app.gaborbiro.utils.ACTION_SHARE
@@ -14,46 +15,20 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         intent.idFromMarkReadIntent()?.let {
-            AppPreferences.markedAsViewed[it] = true
+            AppPreferences.markedAsRead[it] = true
             Toast.makeText(context, "Marked as read", Toast.LENGTH_SHORT).show()
             LocalNotificationManager.hideNotification(it)
         }
         intent.idFromShareIntent()?.let {
-            AppPreferences.markedAsViewed[it] = true
+            AppPreferences.markedAsRead[it] = true
             if (AppPreferences.jobs.containsKey(it)) {
                 return
             }
-            try {
-                Intent(Intent.ACTION_SEND).apply {
-                    data = Uri.parse(AppPreferences.jobs[it]!!.link)
-                    type = "text/plain"
-                    putExtra("android.intent.extra.TEXT", it)
-                    setClassName(
-                        "com.pushbullet.android",
-                        "com.pushbullet.android.ui.ShareActivity"
-                    )
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                }.also {
-                    context.startActivity(it)
-                }
-            } catch (e: Throwable) {
-                e.printStackTrace()
-
-                Intent(Intent.ACTION_SEND).apply {
-                    data = Uri.parse(AppPreferences.jobs[it]!!.link)
-                    type = "text/plain"
-                    putExtra("android.intent.extra.TEXT", it)
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                }.also {
-                    val chooserIntent = Intent.createChooser(it, "Share URL")
-                    chooserIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    context.startActivity(chooserIntent)
-                }
-            }
+            context.share(AppPreferences.jobs[it]!!.link)
             LocalNotificationManager.hideNotification(it)
         }
         intent.idFromFavoriteIntent()?.let {
-            AppPreferences.markedAsViewed[it] = true
+            AppPreferences.markedAsRead[it] = true
             if (!AppPreferences.favorites.contains(it)) {
                 AppPreferences.favorites.add(it)
             }

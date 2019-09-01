@@ -15,16 +15,14 @@
 
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
-    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
-
     <style name="Toolbar">
         <item name="android:layout_height">?attr/actionBarSize</item>
         <item name="android:background">?attr/colorPrimary</item>
-        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_width">match_parent</item>
         <item name="android:elevation">4dp</item>
         <item name="theme">@style/ToolBarTheme</item>
         <item name="titleTextColor">@color/white</item>
-        <item name="titleTextAppearance">@style/UIKit.TextAppearance.Body.Medium.Bold</item>
+        <item name="titleTextAppearance">@style/UIKit.TextAppearance.Heading.XSmall.Bold</item>
     </style>
 
     <style name="ToolBarTheme" parent="AppTheme">

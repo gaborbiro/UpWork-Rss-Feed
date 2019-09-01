@@ -4,7 +4,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
@@ -13,6 +12,8 @@ import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import app.gaborbiro.pollrss.AppContextProvider
+import app.gaborbiro.pollrss.utils.PUSHBULLET_PACKAGE
+import app.gaborbiro.pollrss.utils.isPackageInstalled
 import com.piottechnologies.stationmaster.notifications.R
 
 
@@ -46,7 +47,7 @@ object LocalNotificationManager {
                     getMarkReadIntent(id)
                 )
                 val shareActionName =
-                    if (isPackageInstalled("com.pushbullet.android")) "Push" else "Share"
+                    if (appContext.isPackageInstalled(PUSHBULLET_PACKAGE)) "Push" else "Share"
                 addAction(
                     R.drawable.ic_launcher_foreground,
                     shareActionName,
@@ -141,16 +142,6 @@ object LocalNotificationManager {
             )
             notificationManager.createNotificationChannel(alertChannel)
         }
-    }
-
-    private fun isPackageInstalled(packageName: String): Boolean {
-        var found = true
-        try {
-            appContext.packageManager.getPackageInfo(packageName, 0)
-        } catch (e: PackageManager.NameNotFoundException) {
-            found = false
-        }
-        return found
     }
 }
 

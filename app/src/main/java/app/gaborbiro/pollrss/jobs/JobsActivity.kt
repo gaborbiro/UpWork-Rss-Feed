@@ -1,44 +1,49 @@
-package app.gaborbiro.pollrss
+package app.gaborbiro.pollrss.jobs
 
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
-import android.text.Html
-import android.text.method.LinkMovementMethod
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.work.Constraints
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import app.gaborbiro.pollrss.model.*
+import app.gaborbiro.pollrss.AppPreferences
+import app.gaborbiro.pollrss.R
+import app.gaborbiro.pollrss.data.JobMapper
+import app.gaborbiro.pollrss.favorite.FavoritesActivity
+import app.gaborbiro.pollrss.model.Job
+import app.gaborbiro.pollrss.model.formatDescriptionForNotification
 import app.gaborbiro.pollrss.rss.RssReader
+import app.gaborbiro.pollrss.utils.share
 import app.gaborbiro.utils.LocalNotificationManager
+import com.google.android.material.snackbar.BaseTransientBottomBar
+import com.google.android.material.snackbar.Snackbar
 import io.reactivex.Maybe
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.content_main.*
+import kotlinx.android.synthetic.main.activity_jobs.*
+import kotlinx.android.synthetic.main.content_jobs.*
 import org.jetbrains.anko.longToast
 import org.jetbrains.anko.toast
 import java.net.URL
 import java.time.Duration
 import java.time.ZoneOffset
 
-class MainActivity : AppCompatActivity() {
+class JobsActivity : AppCompatActivity() {
 
     private var disposable: Disposable? = null
+    private var adapter: JobAdapter? = null
+    private var pendingMarkAsReadId: Long? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_jobs)
         setSupportActionBar(toolbar)
 
-        content.movementMethod = LinkMovementMethod.getInstance()
         loadJobs()
 
         swipe_refresh_layout.setOnRefreshListener {
@@ -63,32 +68,20 @@ class MainActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        if (intent.extras.get("com.android.browser.application_id") != BuildConfig.APPLICATION_ID) {
-            return
-        }
-        when (intent.data?.path) {
-            "/$PATH_MARK_READ" -> {
-                val id = intent.data.getQueryParameter(QUERY_PARAM_ID)!!.toLong()
-                AppPreferences.markedAsViewed[id] = true
-                loadJobs()
-            }
-            "/$PATH_FAVORITE" -> {
-                val id = intent.data.getQueryParameter(QUERY_PARAM_ID)!!.toLong()
-                AppPreferences.markedAsViewed[id] = true
-                AppPreferences.favorites.add(id)
-                Toast.makeText(this, "Marked as favorite", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
     override fun onPause() {
         super.onPause()
         disposable?.dispose()
+        pendingMarkAsReadId?.let {
+            AppPreferences.markedAsRead[it] = true
+            pendingMarkAsReadId = null
+        }
     }
 
     private fun loadJobs() {
+        pendingMarkAsReadId?.let {
+            AppPreferences.markedAsRead[it] = true
+            pendingMarkAsReadId = null
+        }
         if (!swipe_refresh_layout.isRefreshing) {
             progress_indicator.visibility = View.VISIBLE
         }
@@ -107,7 +100,6 @@ class MainActivity : AppCompatActivity() {
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnTerminate {
-                content.visibility = View.VISIBLE
                 progress_indicator.visibility = View.GONE
                 swipe_refresh_layout.isRefreshing = false
             }
@@ -116,27 +108,60 @@ class MainActivity : AppCompatActivity() {
                     AppPreferences.jobs[it.id] = it
                 }
                 val filteredSortedJobs = jobs
-                    .filter { AppPreferences.markedAsViewed[it.id] != true }
+                    .filter { AppPreferences.markedAsRead[it.id] != true }
                     .sortedByDescending { it.localDateTime }
-                val contentStr = filteredSortedJobs
-                    .joinToString(
-                        separator = "<br><br>",
-                        transform = Job::formatDescriptionForList
+                if (filteredSortedJobs.isNotEmpty()) {
+                    adapter = JobAdapter(
+                        filteredSortedJobs.toMutableList(),
+                        jobAdapterCallback
                     )
-                if (contentStr.isNotEmpty()) {
-                    content.text = Html.fromHtml(contentStr, 0)
+                    recycle_view.adapter = adapter
+                    AppPreferences.lastSeenDate =
+                        filteredSortedJobs[0].localDateTime.toInstant(ZoneOffset.UTC)
+                            .toEpochMilli()
+                    recycle_view.visibility = View.VISIBLE
+                    empty.visibility = View.GONE
                 } else {
-                    content.text = "No new jobs"
+                    recycle_view.visibility = View.GONE
+                    empty.visibility = View.VISIBLE
                 }
-                AppPreferences.lastSeenDate =
-                    filteredSortedJobs[0].localDateTime.toInstant(ZoneOffset.UTC)
-                        .toEpochMilli()
                 startBackgroundPolling()
             },
                 {
                     it.printStackTrace()
                     it.message?.let(this::longToast) ?: toast("Oops. Something went wrong!")
                 })
+    }
+
+    private val jobAdapterCallback = object : JobAdapter.JobAdapterCallback {
+        override fun onMarkedAsRead(job: Job) {
+            val position = adapter?.removeItem(job)
+            pendingMarkAsReadId = job.id
+            Snackbar.make(recycle_view, "Marked as read", Snackbar.LENGTH_LONG)
+                .setAction("Undo") {
+                    adapter?.addItem(position!!, job)
+                }
+                .addCallback(object : BaseTransientBottomBar.BaseCallback<Snackbar?>() {
+                    override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                        if (event == Snackbar.Callback.DISMISS_EVENT_TIMEOUT || event == DISMISS_EVENT_CONSECUTIVE) {
+                            AppPreferences.markedAsRead[job.id] = true
+                            pendingMarkAsReadId = null
+                        }
+                    }
+                })
+                .show()
+        }
+
+        override fun onShare(job: Job) {
+            share(job.link)
+        }
+
+        override fun onFavorite(job: Job) {
+            AppPreferences.markedAsRead[job.id] = true
+            AppPreferences.favorites.add(job.id)
+            adapter?.removeItem(job)
+            Snackbar.make(recycle_view, "Marked as favorite", Snackbar.LENGTH_LONG).show()
+        }
     }
 
     private fun startBackgroundPolling() {
@@ -162,7 +187,7 @@ class PollRssWorker(appContext: Context, workerParams: WorkerParameters) :
                 rssFeed.rssItems
                     .mapNotNull(JobMapper::map)
                     .filter {
-                        AppPreferences.markedAsViewed[it.id] != true && it.localDateTime.toInstant(
+                        AppPreferences.markedAsRead[it.id] != true && it.localDateTime.toInstant(
                             ZoneOffset.UTC
                         ).toEpochMilli() > AppPreferences.lastSeenDate
                     }

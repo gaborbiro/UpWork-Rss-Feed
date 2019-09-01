@@ -20,12 +20,10 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
             LocalNotificationManager.hideNotification(it)
         }
         intent.idFromShareIntent()?.let {
-            AppPreferences.markedAsRead[it] = true
-            if (AppPreferences.jobs.containsKey(it)) {
+            if (!AppPreferences.jobs.containsKey(it)) {
                 return
             }
             context.share(AppPreferences.jobs[it]!!.link)
-            LocalNotificationManager.hideNotification(it)
         }
         intent.idFromFavoriteIntent()?.let {
             AppPreferences.markedAsRead[it] = true

@@ -12,7 +12,11 @@ import app.gaborbiro.pollrss.model.Job
 import app.gaborbiro.pollrss.model.exactFormattedTime
 import kotlinx.android.synthetic.main.card_job_base.view.*
 
-abstract class BaseJobAdapter<VH : BaseJobViewHolder>(private val jobs: MutableList<Job>, @LayoutRes val itemLayout: Int) :
+abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
+    private val jobs: MutableList<Job>,
+    private val callback: BaseJobAdapterCallback,
+    @LayoutRes val itemLayout: Int
+) :
     RecyclerView.Adapter<VH>() {
 
     abstract fun createViewHolder(view: View): VH
@@ -42,6 +46,9 @@ abstract class BaseJobAdapter<VH : BaseJobViewHolder>(private val jobs: MutableL
         val job = jobs[position]
         with(holder) {
             title.text = Html.fromHtml(job.title, 0)
+            title.setOnClickListener {
+                callback.onTitleClicked(job)
+            }
             description.text = Html.fromHtml(job.description, 0)
             description.movementMethod = LinkMovementMethod.getInstance()
             posted.text = Html.fromHtml("${job.exactFormattedTime()} / <b>${job.country}</b>", 0)
@@ -53,4 +60,8 @@ open class BaseJobViewHolder(view: View) : RecyclerView.ViewHolder(view) {
     val title: TextView = view.title
     val description: TextView = view.description
     val posted: TextView = view.posted
+}
+
+interface BaseJobAdapterCallback {
+    fun onTitleClicked(job: Job)
 }

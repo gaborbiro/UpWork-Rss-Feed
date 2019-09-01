@@ -42,19 +42,21 @@ object LocalNotificationManager {
                 autoCancel = false
             ).apply {
                 addAction(
-                    R.drawable.ic_launcher_foreground,
+                    R.drawable.ic_check,
                     "Mark as read",
                     getMarkReadIntent(id)
                 )
                 val shareActionName =
                     if (appContext.isPackageInstalled(PUSHBULLET_PACKAGE)) "Push" else "Share"
+                val shareActionIcon =
+                    if (appContext.isPackageInstalled(PUSHBULLET_PACKAGE)) R.drawable.ic_computer else R.drawable.ic_share
                 addAction(
-                    R.drawable.ic_launcher_foreground,
+                    shareActionIcon,
                     shareActionName,
                     getShareIntent(id)
                 )
                 addAction(
-                    R.drawable.ic_launcher_foreground,
+                    R.drawable.ic_favorite_border,
                     "Favorite",
                     getFavoriteIntent(id)
                 )

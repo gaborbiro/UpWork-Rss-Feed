@@ -8,11 +8,11 @@ import androidx.appcompat.app.AppCompatActivity
 import app.gaborbiro.pollrss.AppPreferences
 import app.gaborbiro.pollrss.R
 import app.gaborbiro.pollrss.model.Job
+import app.gaborbiro.pollrss.utils.openLink
 import app.gaborbiro.pollrss.utils.share
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_favorites.*
-import kotlinx.android.synthetic.main.activity_favorites.recycle_view
 
 class FavoritesActivity : AppCompatActivity() {
 
@@ -66,6 +66,10 @@ class FavoritesActivity : AppCompatActivity() {
     }
 
     private val jobAdapterCallback = object : FavoriteJobAdapter.FavoritesJobAdapterCallback {
+
+        override fun onTitleClicked(job: Job) {
+            openLink(job.link)
+        }
 
         override fun onShare(job: Job) {
             share(job.link)

@@ -3,6 +3,7 @@ package app.gaborbiro.pollrss.favorite
 import android.view.View
 import android.widget.ImageView
 import app.gaborbiro.pollrss.BaseJobAdapter
+import app.gaborbiro.pollrss.BaseJobAdapterCallback
 import app.gaborbiro.pollrss.BaseJobViewHolder
 import app.gaborbiro.pollrss.R
 import app.gaborbiro.pollrss.model.Job
@@ -14,9 +15,9 @@ class FavoriteJobAdapter(
     private val jobs: MutableList<Job>,
     private val callback: FavoritesJobAdapterCallback
 ) :
-    BaseJobAdapter<FavoriteJobViewHolder>(jobs, R.layout.card_favorite_job) {
+    BaseJobAdapter<FavoriteJobViewHolder>(jobs, callback, R.layout.card_favorite_job) {
 
-    interface FavoritesJobAdapterCallback {
+    interface FavoritesJobAdapterCallback : BaseJobAdapterCallback {
         fun onShare(job: Job)
         fun onDelete(job: Job)
     }

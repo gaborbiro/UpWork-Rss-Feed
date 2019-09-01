@@ -17,6 +17,7 @@ import app.gaborbiro.pollrss.favorite.FavoritesActivity
 import app.gaborbiro.pollrss.model.Job
 import app.gaborbiro.pollrss.model.formatDescriptionForNotification
 import app.gaborbiro.pollrss.rss.RssReader
+import app.gaborbiro.pollrss.utils.openLink
 import app.gaborbiro.pollrss.utils.share
 import app.gaborbiro.utils.LocalNotificationManager
 import com.google.android.material.snackbar.BaseTransientBottomBar
@@ -85,7 +86,6 @@ class JobsActivity : AppCompatActivity() {
         if (!swipe_refresh_layout.isRefreshing) {
             progress_indicator.visibility = View.VISIBLE
         }
-        LocalNotificationManager.hideNotifications()
         disposable?.dispose()
         disposable = Maybe.create<List<Job>> { emitter ->
             try {
@@ -134,6 +134,10 @@ class JobsActivity : AppCompatActivity() {
     }
 
     private val jobAdapterCallback = object : JobAdapter.JobAdapterCallback {
+        override fun onTitleClicked(job: Job) {
+            openLink(job.link)
+        }
+
         override fun onMarkedAsRead(job: Job) {
             val position = adapter?.removeItem(job)
             pendingMarkAsReadId = job.id
@@ -187,7 +191,8 @@ class PollRssWorker(appContext: Context, workerParams: WorkerParameters) :
                 rssFeed.rssItems
                     .mapNotNull(JobMapper::map)
                     .filter {
-                        AppPreferences.markedAsRead[it.id] != true && it.localDateTime.toInstant(
+                        AppPreferences.markedAsRead[it.id] != true
+                                && it.localDateTime.toInstant(
                             ZoneOffset.UTC
                         ).toEpochMilli() > AppPreferences.lastSeenDate
                     }
@@ -209,11 +214,6 @@ class PollRssWorker(appContext: Context, workerParams: WorkerParameters) :
             t.printStackTrace()
             return Result.failure()
         }
-    }
-
-    override fun onStopped() {
-        super.onStopped()
-        LocalNotificationManager.hideNotifications()
     }
 }
 

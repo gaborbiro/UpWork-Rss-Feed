@@ -42,7 +42,7 @@ object LocalNotificationManager {
                 autoCancel = false
             ).apply {
                 addAction(
-                    R.drawable.ic_check,
+                    R.drawable.ic_delete,
                     "Mark as read",
                     getMarkReadIntent(id)
                 )

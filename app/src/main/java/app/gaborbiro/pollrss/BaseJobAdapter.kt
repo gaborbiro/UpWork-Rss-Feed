@@ -9,7 +9,7 @@ import android.widget.TextView
 import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
 import app.gaborbiro.pollrss.model.Job
-import app.gaborbiro.pollrss.model.exactFormattedTime
+import app.gaborbiro.pollrss.model.simpleFormattedTime
 import kotlinx.android.synthetic.main.card_job_base.view.*
 
 abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
@@ -46,12 +46,32 @@ abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
         val job = jobs[position]
         with(holder) {
             title.text = Html.fromHtml(job.title, 0)
-            title.setOnClickListener {
-                callback.onTitleClicked(job)
-            }
+            title.movementMethod = LinkMovementMethod.getInstance()
             description.text = Html.fromHtml(job.description, 0)
             description.movementMethod = LinkMovementMethod.getInstance()
-            posted.text = Html.fromHtml("${job.exactFormattedTime()} / <b>${job.country}</b>", 0)
+            posted.text = Html.fromHtml("${job.simpleFormattedTime()} / <b>${job.country}</b>", 0)
+            budget.text = job.budget ?: "-"
+            title.setOnClickListener {
+                callback.onBodyClicked(job)
+            }
+            description.setOnClickListener {
+                callback.onBodyClicked(job)
+            }
+            posted.setOnClickListener {
+                callback.onBodyClicked(job)
+            }
+            postedLabel.setOnClickListener {
+                callback.onBodyClicked(job)
+            }
+            itemView.setOnClickListener {
+                callback.onBodyClicked(job)
+            }
+            budget.setOnClickListener {
+                callback.onBodyClicked(job)
+            }
+            budgetLabel.setOnClickListener {
+                callback.onBodyClicked(job)
+            }
         }
     }
 }
@@ -59,9 +79,12 @@ abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
 open class BaseJobViewHolder(view: View) : RecyclerView.ViewHolder(view) {
     val title: TextView = view.title
     val description: TextView = view.description
+    val postedLabel: TextView = view.posted_label
     val posted: TextView = view.posted
+    val budgetLabel: TextView = view.budget_label
+    val budget: TextView = view.budget
 }
 
 interface BaseJobAdapterCallback {
-    fun onTitleClicked(job: Job)
+    fun onBodyClicked(job: Job)
 }

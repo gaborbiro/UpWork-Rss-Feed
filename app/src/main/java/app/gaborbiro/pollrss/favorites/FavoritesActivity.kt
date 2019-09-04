@@ -1,10 +1,14 @@
-package app.gaborbiro.pollrss.favorite
+package app.gaborbiro.pollrss.favorites
 
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.view.Gravity
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import app.gaborbiro.pollrss.AppPreferences
 import app.gaborbiro.pollrss.R
 import app.gaborbiro.pollrss.model.Job
@@ -13,6 +17,9 @@ import app.gaborbiro.pollrss.utils.share
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_favorites.*
+import org.jetbrains.anko.alert
+import org.jetbrains.anko.cancelButton
+import org.jetbrains.anko.yesButton
 
 class FavoritesActivity : AppCompatActivity() {
 
@@ -41,6 +48,28 @@ class FavoritesActivity : AppCompatActivity() {
         loadFavorites()
     }
 
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.favorites, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.action_delete_all -> {
+                alert {
+                    message = "Are you sure you want to delete all of your favorite jobs?"
+                    yesButton {
+                        AppPreferences.favorites.clear()
+                        loadFavorites()
+                    }
+                    cancelButton { }
+                }.show()
+                return true
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
     override fun onPause() {
         super.onPause()
         pendingRemoveId?.let {
@@ -67,7 +96,7 @@ class FavoritesActivity : AppCompatActivity() {
 
     private val jobAdapterCallback = object : FavoriteJobAdapter.FavoritesJobAdapterCallback {
 
-        override fun onTitleClicked(job: Job) {
+        override fun onBodyClicked(job: Job) {
             openLink(job.link)
         }
 
@@ -78,7 +107,7 @@ class FavoritesActivity : AppCompatActivity() {
         override fun onDelete(job: Job) {
             val position = adapter.removeItem(job)
             pendingRemoveId = job.id
-            Snackbar.make(recycle_view, "Removing from favorites...", Snackbar.LENGTH_LONG)
+            makeTopSnackBar("Removing from favorites...", Snackbar.LENGTH_SHORT)
                 .setAction("Undo") {
                     adapter.addItem(position, job)
                 }
@@ -91,6 +120,22 @@ class FavoritesActivity : AppCompatActivity() {
                     }
                 })
                 .show()
+            if (adapter.itemCount == 0) {
+                recycle_view.visibility = View.GONE
+                empty.visibility = View.VISIBLE
+            }
         }
+    }
+
+    private fun makeTopSnackBar(message: String, duration: Int): Snackbar {
+        return Snackbar.make(snackbar_host, message, duration)
+            .apply {
+                (view.layoutParams as CoordinatorLayout.LayoutParams).apply {
+                    gravity = Gravity.TOP
+                }.also {
+                    view.layoutParams = it
+                    view.rotation = 180f
+                }
+            }
     }
 }

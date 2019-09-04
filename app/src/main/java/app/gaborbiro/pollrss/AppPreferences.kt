@@ -16,8 +16,8 @@ object AppPreferences {
     )
 
     fun cleanupJobs() {
-        jobs.keys.filter { !favorites.contains(it) }.forEach {
-            jobs.keys.remove(it)
+        jobs.keys.filter { it !in favorites }.forEach {
+            jobs.remove(it)
         }
     }
 
@@ -26,10 +26,19 @@ object AppPreferences {
         mutableMapOf<Long, Boolean>()
     )
 
-    var lastSeenDate: Long by prefsUtil.delegate(PREF_LAST_SEEN_DATE, 0L)
+    var lastMarkAllReadTimestamp: Long by prefsUtil.delegate(PREF_LAST_MARK_ALL_READ_TIMESTAMP, 0L)
+
+    var lastDisplayedTimestamp: Long by prefsUtil.delegate(PREF_LAST_DISPLAYED_TIMESTAMP, 0L)
+
+    var lastRefresh: Long by prefsUtil.delegate(PREF_LAST_REFRESH, 0L)
+
+    var showAll: Boolean by prefsUtil.delegate(PREF_SHOW_ALL, false)
 }
 
 private const val PREF_FAVORITES = "FAVORITES"
 private const val PREF_JOBS = "JOBS"
 private const val PREF_MARKED_AS_READ = "MARKED_AS_READ"
-private const val PREF_LAST_SEEN_DATE = "LAST_SEEN_DATE"
+private const val PREF_LAST_MARK_ALL_READ_TIMESTAMP = "LAST_MARK_ALL_READ_TIMESTAMP"
+private const val PREF_LAST_DISPLAYED_TIMESTAMP = "LAST_DISPLAYED_TIMESTAMP"
+private const val PREF_LAST_REFRESH = "LAST_REFRESH"
+private const val PREF_SHOW_ALL = "SHOW_ALL"

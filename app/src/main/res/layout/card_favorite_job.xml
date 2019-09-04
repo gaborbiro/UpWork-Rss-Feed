@@ -38,6 +38,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?selectableItemBackgroundBorderless"
+                android:tint="@color/black_100"
                 android:src="@drawable/ic_computer" />
 
             <ImageView
@@ -48,6 +49,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?selectableItemBackgroundBorderless"
+                android:tint="@color/black_100"
                 android:src="@drawable/ic_delete" />
         </com.google.android.flexbox.FlexboxLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>

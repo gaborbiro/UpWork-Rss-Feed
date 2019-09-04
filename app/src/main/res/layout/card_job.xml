@@ -38,7 +38,8 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_check" />
+                android:tint="@color/black_100"
+                android:src="@drawable/ic_delete" />
 
             <ImageView
                 android:id="@+id/btn_share"
@@ -48,6 +49,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?selectableItemBackgroundBorderless"
+                android:tint="@color/black_100"
                 android:src="@drawable/ic_computer" />
 
             <ImageView

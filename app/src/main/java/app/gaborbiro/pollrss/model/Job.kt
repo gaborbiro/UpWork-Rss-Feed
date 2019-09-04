@@ -18,7 +18,11 @@ class Job(
     val category: String?,
     val skills: String?,
     val country: String?
-)
+) {
+    override fun toString(): String {
+        return "Job(title='$title', localDateTime=$localDateTime)"
+    }
+}
 
 fun Job.formatDescriptionForNotification(): String {
     val job = this

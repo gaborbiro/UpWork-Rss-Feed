@@ -1,4 +1,4 @@
-package app.gaborbiro.pollrss.favorite
+package app.gaborbiro.pollrss.favorites
 
 import android.view.View
 import android.widget.ImageView

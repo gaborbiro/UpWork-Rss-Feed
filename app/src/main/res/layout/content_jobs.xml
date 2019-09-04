@@ -49,5 +49,5 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:visibility="gone"
         tools:visibility="visible"
-        android:text="No jobs" />
+        tools:text="No jobs" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -28,7 +28,7 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
         intent.idFromFavoriteIntent()?.let {
             AppPreferences.markedAsRead[it] = true
             if (!AppPreferences.favorites.contains(it)) {
-                AppPreferences.favorites.add(it)
+                AppPreferences.favorites.add(0, it)
             }
             LocalNotificationManager.hideNotification(it)
         }

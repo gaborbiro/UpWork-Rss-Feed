@@ -44,6 +44,7 @@ dependencies {
     implementation anko.common
     implementation rxjava.core
     implementation rxjava.android
+    implementation anko.common
 
 
     implementation gson

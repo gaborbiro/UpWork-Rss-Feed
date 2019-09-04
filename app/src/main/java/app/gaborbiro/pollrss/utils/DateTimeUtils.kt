@@ -5,10 +5,7 @@ import app.gaborbiro.pollrss.R
 import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
-import java.time.Duration
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneOffset
+import java.time.*
 import java.time.format.DateTimeFormatter
 
 
@@ -44,8 +41,16 @@ class LocalDateTimeAdapter : TypeAdapter<LocalDateTime>() {
         reader.beginObject()
         reader.hasNext()
         reader.nextName()
-        val result = LocalDateTime.ofInstant(Instant.ofEpochMilli(reader.nextLong()), ZoneOffset.UTC)
+        val result =
+            LocalDateTime.ofInstant(Instant.ofEpochMilli(reader.nextLong()), ZoneOffset.UTC)
         reader.endObject()
         return result
     }
 }
+
+fun epochMillis() = ZonedDateTime.now(ZoneOffset.UTC).toInstant().toEpochMilli()
+
+fun LocalDateTime.epochMillis() =
+    atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneOffset.UTC).toInstant().toEpochMilli()
+
+fun Long.toZDT(): ZonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneOffset.UTC)

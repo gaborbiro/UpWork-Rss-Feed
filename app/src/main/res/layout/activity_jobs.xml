@@ -12,9 +12,35 @@
 
         <androidx.appcompat.widget.Toolbar
             style="@style/Toolbar"
-            android:id="@+id/toolbar" />
+            android:id="@+id/toolbar">
+
+            <androidx.core.widget.ContentLoadingProgressBar
+                android:id="@+id/progress_indicator_toolbar"
+                style="?android:progressBarStyleSmall"
+                android:indeterminateTint="@color/white"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginEnd="@dimen/default_margin" />
+
+            <Switch
+                android:id="@+id/unread_switch"
+                android:textColor="@color/white"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                tools:text="All" />
+        </androidx.appcompat.widget.Toolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
 
     <include layout="@layout/content_jobs" />
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/snackbar_host"
+        android:elevation="8dp"
+        android:rotation="180"
+        android:background="@android:color/transparent" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

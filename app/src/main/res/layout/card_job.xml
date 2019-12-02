@@ -39,7 +39,7 @@
                 android:focusable="true"
                 android:foreground="?selectableItemBackgroundBorderless"
                 android:tint="@color/black_100"
-                android:src="@drawable/ic_delete" />
+                android:src="@drawable/ic_check" />
 
             <ImageView
                 android:id="@+id/btn_share"

@@ -38,7 +38,10 @@ object JobMapper {
             linkGroups = Regex("<a([^<]+)</a>").find(temp)?.groups
             temp = linkGroups?.get(0)?.range?.let(temp::removeRange) ?: temp
             temp.replace(Regex("(<br[\\s]*[/]?>|[\\n]+)"), "\n")
-                .replace("This job was posted from a mobile device, so please pardon any typos or any missing details.", "")
+                .replace(
+                    "This job was posted from a mobile device, so please pardon any typos or any missing details.",
+                    ""
+                )
                 .replace(Regex("(<[/]?b>)"), "").cleanWS()
         }
         val zonedDateTime = ZonedDateTime.parse(rssItem.pubDate, FEED_DATE_TIME_FORMAT)

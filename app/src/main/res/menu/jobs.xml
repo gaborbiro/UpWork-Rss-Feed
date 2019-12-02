@@ -4,13 +4,18 @@
     <item
         android:id="@+id/action_mark_all"
         android:icon="@drawable/ic_check"
-        android:orderInCategory="99"
+        android:orderInCategory="98"
         android:title="Mark all as read"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_favorites"
         android:icon="@drawable/ic_favorite"
-        android:orderInCategory="100"
+        android:orderInCategory="99"
         android:title="Favorites"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="100"
+        android:title="Settings"
+        app:showAsAction="never" />
 </menu>

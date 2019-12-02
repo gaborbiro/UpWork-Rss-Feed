@@ -11,8 +11,8 @@ import app.gaborbiro.pollrss.utils.PUSHBULLET_PACKAGE
 import app.gaborbiro.pollrss.utils.isPackageInstalled
 import kotlinx.android.synthetic.main.card_job.view.*
 
-class JobAdapter(private val jobs: MutableList<Job>,
-                 private val callback: JobAdapterCallback) :
+class JobsAdapter(private val jobs: MutableList<Job>,
+                  private val callback: JobAdapterCallback) :
     BaseJobAdapter<JobViewHolder>(jobs, callback, R.layout.card_job) {
 
     interface JobAdapterCallback: BaseJobAdapterCallback {

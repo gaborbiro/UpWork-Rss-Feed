@@ -20,6 +20,7 @@ import app.gaborbiro.pollrss.favorites.FavoritesActivity
 import app.gaborbiro.pollrss.model.Job
 import app.gaborbiro.pollrss.model.formatDescriptionForNotification
 import app.gaborbiro.pollrss.rss.RssReader
+import app.gaborbiro.pollrss.settings.SettingsActivity
 import app.gaborbiro.pollrss.utils.epochMillis
 import app.gaborbiro.pollrss.utils.openLink
 import app.gaborbiro.pollrss.utils.share
@@ -42,7 +43,7 @@ import java.time.ZonedDateTime
 class JobsActivity : AppCompatActivity() {
 
     private var jobsLoaderDisposable: Disposable? = null
-    private var adapter: JobAdapter? = null
+    private var adapter: JobsAdapter? = null
     private var pendingMarkAsReadId: Long? = null
     private var newJobsSnackbar: Snackbar? = null
     private var messageToShowOnLoad: String? = null
@@ -92,7 +93,7 @@ class JobsActivity : AppCompatActivity() {
         when (item.itemId) {
             R.id.action_mark_all -> {
                 alert {
-                    message = "Mark all jobs as read?"
+                    message = "Mark all unread jobs as read?"
                     yesButton {
                         AppPreferences.lastMarkAllReadTimestamp = epochMillis()
                         AppPreferences.markedAsRead.clear()
@@ -111,6 +112,9 @@ class JobsActivity : AppCompatActivity() {
             R.id.action_favorites -> {
                 FavoritesActivity.start(this)
                 return true
+            }
+            R.id.action_settings -> {
+                SettingsActivity.launch(this)
             }
         }
         return super.onOptionsItemSelected(item)
@@ -193,7 +197,7 @@ class JobsActivity : AppCompatActivity() {
                     filteredSortedJobs.forEach {
                         AppPreferences.jobs[it.id] = it
                     }
-                    adapter = JobAdapter(
+                    adapter = JobsAdapter(
                         filteredSortedJobs.toMutableList(),
                         jobAdapterCallback
                     )
@@ -237,7 +241,7 @@ class JobsActivity : AppCompatActivity() {
         }
     }
 
-    private val jobAdapterCallback = object : JobAdapter.JobAdapterCallback {
+    private val jobAdapterCallback = object : JobsAdapter.JobAdapterCallback {
         override fun onBodyClicked(job: Job) {
             openLink(job.link)
         }

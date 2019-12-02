@@ -18,7 +18,6 @@ import app.gaborbiro.pollrss.R
 import app.gaborbiro.pollrss.data.JobMapper
 import app.gaborbiro.pollrss.favorites.FavoritesActivity
 import app.gaborbiro.pollrss.model.Job
-import app.gaborbiro.pollrss.model.formatDescriptionForNotification
 import app.gaborbiro.pollrss.rss.RssReader
 import app.gaborbiro.pollrss.settings.SettingsActivity
 import app.gaborbiro.pollrss.utils.epochMillis
@@ -26,7 +25,6 @@ import app.gaborbiro.pollrss.utils.openLink
 import app.gaborbiro.pollrss.utils.share
 import app.gaborbiro.pollrss.utils.toZDT
 import app.gaborbiro.utils.LocalNotificationManager
-import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.Maybe
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -44,7 +42,6 @@ class JobsActivity : AppCompatActivity() {
 
     private var jobsLoaderDisposable: Disposable? = null
     private var adapter: JobsAdapter? = null
-    private var pendingMarkAsReadId: Long? = null
     private var newJobsSnackbar: Snackbar? = null
     private var messageToShowOnLoad: String? = null
 
@@ -145,17 +142,9 @@ class JobsActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         jobsLoaderDisposable?.dispose()
-        pendingMarkAsReadId?.let {
-            AppPreferences.markedAsRead[it] = true
-            pendingMarkAsReadId = null
-        }
     }
 
     private fun loadJobs(onFinish: (() -> Unit)? = null) {
-        pendingMarkAsReadId?.let {
-            AppPreferences.markedAsRead[it] = true
-            pendingMarkAsReadId = null
-        }
         if (!swipe_refresh_layout.isRefreshing) {
             setProgressVisible(true)
         }
@@ -198,7 +187,7 @@ class JobsActivity : AppCompatActivity() {
                         AppPreferences.jobs[it.id] = it
                     }
                     adapter = JobsAdapter(
-                        filteredSortedJobs.toMutableList(),
+                        filteredSortedJobs.map { JobsUIMapper.map(it) }.toMutableList(),
                         jobAdapterCallback
                     )
                     recycle_view.adapter = adapter
@@ -242,40 +231,35 @@ class JobsActivity : AppCompatActivity() {
     }
 
     private val jobAdapterCallback = object : JobsAdapter.JobAdapterCallback {
-        override fun onBodyClicked(job: Job) {
+        override fun onBodyClicked(job: JobUIModel) {
             openLink(job.link)
         }
 
-        override fun onMarkedAsRead(job: Job) {
-            val position = adapter?.removeItem(job)
-            pendingMarkAsReadId = job.id
-            makeTopSnackBar("Marked as read", Snackbar.LENGTH_SHORT)
-                .setAction("Undo") {
-                    adapter?.addItem(position!!, job)
-                    recycle_view.visibility = View.VISIBLE
-                    empty.visibility = View.GONE
+        override fun onMarkedAsRead(job: JobUIModel) {
+            if (!AppPreferences.showAll) {
+                adapter?.removeItem(job)
+                AppPreferences.markedAsRead[job.id] = true
+                makeBottomSnackBar("Marked as read", Snackbar.LENGTH_SHORT).show()
+                if (adapter?.itemCount == 0) {
+                    recycle_view.visibility = View.GONE
+                    empty.visibility = View.VISIBLE
+                    empty.text = "No more jobs for now"
                 }
-                .addCallback(object : BaseTransientBottomBar.BaseCallback<Snackbar?>() {
-                    override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
-                        if (event == Snackbar.Callback.DISMISS_EVENT_TIMEOUT || event == DISMISS_EVENT_CONSECUTIVE) {
-                            AppPreferences.markedAsRead[job.id] = true
-                            pendingMarkAsReadId = null
-                        }
-                    }
-                })
-                .show()
-            if (adapter?.itemCount == 0) {
-                recycle_view.visibility = View.GONE
-                empty.visibility = View.VISIBLE
-                empty.text = "No more jobs for now"
+            } else {
+                adapter?.markItemAsRead(job)
             }
         }
 
-        override fun onShare(job: Job) {
+        override fun onMarkedAsUnread(job: JobUIModel) {
+            AppPreferences.markedAsRead.remove(job.id)
+            adapter?.markItemAsUnread(job)
+        }
+
+        override fun onShare(job: JobUIModel) {
             share(job.link)
         }
 
-        override fun onFavorite(job: Job) {
+        override fun onFavorite(job: JobUIModel) {
             AppPreferences.markedAsRead[job.id] = true
             AppPreferences.favorites.add(0, job.id)
             adapter?.removeItem(job)
@@ -385,7 +369,7 @@ class PollRssWorker(appContext: Context, workerParams: WorkerParameters) :
                                 LocalNotificationManager.showNewJobNotification(
                                     id = job.id,
                                     title = job.title,
-                                    messageBody = job.formatDescriptionForNotification()
+                                    messageBody = JobsUIMapper.formatDescriptionForNotification(job)
                                 )
                             }
                     }

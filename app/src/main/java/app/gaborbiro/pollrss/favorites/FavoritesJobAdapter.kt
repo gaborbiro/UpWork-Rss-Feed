@@ -6,20 +6,23 @@ import app.gaborbiro.pollrss.BaseJobAdapter
 import app.gaborbiro.pollrss.BaseJobAdapterCallback
 import app.gaborbiro.pollrss.BaseJobViewHolder
 import app.gaborbiro.pollrss.R
-import app.gaborbiro.pollrss.model.Job
+import app.gaborbiro.pollrss.jobs.JobUIModel
 import app.gaborbiro.pollrss.utils.PUSHBULLET_PACKAGE
 import app.gaborbiro.pollrss.utils.isPackageInstalled
 import kotlinx.android.synthetic.main.card_favorite_job.view.*
 
 class FavoriteJobAdapter(
-    private val jobs: MutableList<Job>,
+    private val jobs: MutableList<JobUIModel>,
     private val callback: FavoritesJobAdapterCallback
-) :
-    BaseJobAdapter<FavoriteJobViewHolder>(jobs, callback, R.layout.card_favorite_job) {
+) : BaseJobAdapter<FavoriteJobViewHolder>(
+    jobs,
+    callback,
+    R.layout.card_favorite_job
+) {
 
     interface FavoritesJobAdapterCallback : BaseJobAdapterCallback {
-        fun onShare(job: Job)
-        fun onDelete(job: Job)
+        fun onShare(job: JobUIModel)
+        fun onDelete(job: JobUIModel)
     }
 
     override fun createViewHolder(view: View) = FavoriteJobViewHolder(view)

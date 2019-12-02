@@ -8,12 +8,11 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
-import app.gaborbiro.pollrss.model.Job
-import app.gaborbiro.pollrss.model.simpleFormattedTime
+import app.gaborbiro.pollrss.jobs.JobUIModel
 import kotlinx.android.synthetic.main.card_job_base.view.*
 
 abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
-    private val jobs: MutableList<Job>,
+    private val jobs: MutableList<JobUIModel>,
     private val callback: BaseJobAdapterCallback,
     @LayoutRes val itemLayout: Int
 ) :
@@ -21,12 +20,14 @@ abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
 
     abstract fun createViewHolder(view: View): VH
 
-    fun addItem(position: Int, job: Job) {
+    fun addItem(position: Int, job: JobUIModel) {
         jobs.add(position, job)
         notifyItemInserted(position)
     }
 
-    fun removeItem(job: Job): Int {
+    fun indexOf(job: JobUIModel) = jobs.indexOf(job)
+
+    fun removeItem(job: JobUIModel): Int {
         val position = jobs.indexOf(job)
         jobs.remove(job)
         notifyItemRemoved(position)
@@ -49,7 +50,7 @@ abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
             title.movementMethod = LinkMovementMethod.getInstance()
             description.text = Html.fromHtml(job.description, 0)
             description.movementMethod = LinkMovementMethod.getInstance()
-            posted.text = Html.fromHtml("${job.simpleFormattedTime()} / <b>${job.country}</b>", 0)
+            posted.text = Html.fromHtml("${job.time} / <b>${job.country}</b>", 0)
             budget.text = job.budget ?: "-"
             title.setOnClickListener {
                 callback.onBodyClicked(job)
@@ -86,5 +87,5 @@ open class BaseJobViewHolder(view: View) : RecyclerView.ViewHolder(view) {
 }
 
 interface BaseJobAdapterCallback {
-    fun onBodyClicked(job: Job)
+    fun onBodyClicked(job: JobUIModel)
 }

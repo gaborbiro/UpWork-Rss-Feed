@@ -11,7 +11,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import app.gaborbiro.pollrss.AppPreferences
 import app.gaborbiro.pollrss.R
-import app.gaborbiro.pollrss.model.Job
+import app.gaborbiro.pollrss.jobs.JobUIModel
+import app.gaborbiro.pollrss.jobs.JobsUIMapper
 import app.gaborbiro.pollrss.utils.openLink
 import app.gaborbiro.pollrss.utils.share
 import com.google.android.material.snackbar.BaseTransientBottomBar
@@ -82,7 +83,7 @@ class FavoritesActivity : AppCompatActivity() {
         val jobs = AppPreferences.favorites.mapNotNull { AppPreferences.jobs[it] }
         if (jobs.isNotEmpty()) {
             adapter = FavoriteJobAdapter(
-                jobs.toMutableList(),
+                jobs.map(JobsUIMapper::map).toMutableList(),
                 jobAdapterCallback
             )
             recycle_view.adapter = adapter
@@ -96,15 +97,15 @@ class FavoritesActivity : AppCompatActivity() {
 
     private val jobAdapterCallback = object : FavoriteJobAdapter.FavoritesJobAdapterCallback {
 
-        override fun onBodyClicked(job: Job) {
+        override fun onBodyClicked(job: JobUIModel) {
             openLink(job.link)
         }
 
-        override fun onShare(job: Job) {
+        override fun onShare(job: JobUIModel) {
             share(job.link)
         }
 
-        override fun onDelete(job: Job) {
+        override fun onDelete(job: JobUIModel) {
             val position = adapter.removeItem(job)
             pendingRemoveId = job.id
             makeTopSnackBar("Removing from favorites...", Snackbar.LENGTH_SHORT)

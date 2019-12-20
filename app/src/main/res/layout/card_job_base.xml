@@ -7,87 +7,88 @@
     tools:showIn="@layout/card_job">
 
     <TextView
-        style="@style/UIKit.TextAppearance.Heading.XSmall.Bold"
         android:id="@+id/title"
+        style="@style/UIKit.TextAppearance.Heading.XSmall.Bold"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/default_margin"
         android:layout_marginTop="@dimen/medium_margin"
-        android:layout_marginStart="@dimen/medium_margin"
         android:layout_marginEnd="@dimen/medium_margin"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         android:autoLink="web"
-        android:linksClickable="true"
-        android:textIsSelectable="true"
         android:clickable="true"
         android:focusable="false"
+        android:gravity="center_horizontal"
+        android:linksClickable="true"
+        android:textIsSelectable="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         tools:text="Development of an awesome Android app" />
 
     <TextView
-        style="@style/UIKit.TextAppearance.Body.Medium.Bold"
         android:id="@+id/budget_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/medium_margin"
-        android:layout_marginStart="@dimen/medium_margin"
-        app:layout_constraintTop_toBottomOf="@id/title"
-        app:layout_constraintStart_toStartOf="parent"
-        android:text="Budget: " />
-
-    <TextView
-        style="@style/UIKit.TextAppearance.Body.Medium"
-        android:id="@+id/budget"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/medium_margin"
-        app:layout_constraintTop_toBottomOf="@id/title"
-        app:layout_constraintStart_toEndOf="@id/budget_label"
-        android:clickable="true"
-        android:focusable="false" />
-
-    <TextView
         style="@style/UIKit.TextAppearance.Body.Medium.Bold"
-        android:id="@+id/posted_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/medium_margin"
         android:layout_marginStart="@dimen/medium_margin"
-        app:layout_constraintTop_toBottomOf="@id/budget_label"
+        android:layout_marginTop="@dimen/default_margin"
+        android:text="Budget: "
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/title" />
+
+    <TextView
+        android:id="@+id/budget"
+        style="@style/UIKit.TextAppearance.Body.Medium"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/default_margin"
         android:clickable="true"
         android:focusable="false"
-        android:text="Posted: " />
+        app:layout_constraintStart_toEndOf="@id/budget_label"
+        app:layout_constraintTop_toBottomOf="@id/title" />
 
     <TextView
-        style="@style/UIKit.TextAppearance.Body.Medium"
+        android:id="@+id/posted_label"
+        style="@style/UIKit.TextAppearance.Body.Medium.Bold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/medium_margin"
+        android:layout_marginTop="@dimen/medium_margin"
+        android:clickable="true"
+        android:focusable="false"
+        android:text="Posted: "
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/budget_label" />
+
+    <TextView
         android:id="@+id/posted"
+        style="@style/UIKit.TextAppearance.Body.Medium"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/medium_margin"
         android:layout_marginEnd="@dimen/default_margin"
-        app:layout_constraintTop_toBottomOf="@id/budget_label"
-        app:layout_constraintStart_toEndOf="@id/posted_label"
-        app:layout_constraintEnd_toEndOf="parent"
         android:clickable="true"
         android:focusable="false"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/posted_label"
+        app:layout_constraintTop_toBottomOf="@id/budget_label"
         tools:text="10:54am, 01 Sep / Bosnia and Herzegovina" />
 
     <TextView
-        style="@style/UIKit.TextAppearance.Body.Medium"
         android:id="@+id/description"
+        style="@style/UIKit.TextAppearance.Body.Medium"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/default_margin"
         android:layout_marginStart="@dimen/medium_margin"
+        android:layout_marginTop="@dimen/default_margin"
         android:layout_marginEnd="@dimen/medium_margin"
-        app:layout_constraintTop_toBottomOf="@id/posted_label"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         android:autoLink="web"
-        android:linksClickable="true"
-        android:textIsSelectable="true"
         android:clickable="true"
         android:focusable="false"
+        android:linksClickable="true"
+        android:textIsSelectable="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/posted_label"
         tools:text="An advertisements website devoted to metals /exchange rates. Where currency exchange offices  brokers can advertise their competitive rates rates." />
 </merge>

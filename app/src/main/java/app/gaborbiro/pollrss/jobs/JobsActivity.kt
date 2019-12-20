@@ -11,9 +11,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.work.*
-import app.gaborbiro.pollrss.App
-import app.gaborbiro.pollrss.AppPreferences
-import app.gaborbiro.pollrss.BuildConfig
+import app.gaborbiro.pollrss.*
 import app.gaborbiro.pollrss.R
 import app.gaborbiro.pollrss.data.JobMapper
 import app.gaborbiro.pollrss.favorites.FavoritesActivity
@@ -33,7 +31,6 @@ import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_jobs.*
 import kotlinx.android.synthetic.main.content_jobs.*
 import org.jetbrains.anko.*
-import java.net.URL
 import java.time.Duration
 import java.time.ZonedDateTime
 
@@ -64,13 +61,25 @@ class JobsActivity : AppCompatActivity() {
                 "Showing new jobs only"
             }
             makeBottomSnackBar(message, Snackbar.LENGTH_SHORT).show()
-            updateSwitchText()
+            updateUnreadSwitchText()
         }
-        updateSwitchText()
+        updateUnreadSwitchText()
+
+        hourly_switch.isChecked = AppPreferences.showHourly
+        hourly_switch.setOnCheckedChangeListener { _, isChecked ->
+            AppPreferences.showHourly = isChecked
+            loadJobs()
+            val message = if (isChecked) {
+                "Showing hourly jobs"
+            } else {
+                "Showing all jobs"
+            }
+            makeBottomSnackBar(message, Snackbar.LENGTH_LONG).show()
+        }
         AppPreferences.cleanupJobs()
     }
 
-    private fun updateSwitchText() {
+    private fun updateUnreadSwitchText() {
         unread_switch.text = if (AppPreferences.showAll) "All" else "New"
     }
 
@@ -178,8 +187,11 @@ class JobsActivity : AppCompatActivity() {
             .subscribe({ jobs: List<Job> ->
                 val filteredSortedJobs = jobs
                     .filter {
-                        AppPreferences.showAll || (AppPreferences.markedAsRead[it.id] != true)
-                                && it.localDateTime.epochMillis() > AppPreferences.lastMarkAllReadTimestamp
+                        val showAll =
+                            AppPreferences.showAll || (AppPreferences.markedAsRead[it.id] != true)
+                                    && it.localDateTime.epochMillis() > AppPreferences.lastMarkAllReadTimestamp
+                        val hourly = !AppPreferences.showHourly || it.budget == null
+                        showAll && hourly
                     }
                     .sortedByDescending { it.localDateTime }
                 if (filteredSortedJobs.isNotEmpty()) {
@@ -221,10 +233,12 @@ class JobsActivity : AppCompatActivity() {
     private fun setProgressVisible(visible: Boolean) {
         if (adapter?.itemCount ?: 0 == 0) {
             unread_switch.visibility = View.VISIBLE
+            hourly_switch.visibility = View.VISIBLE
             progress_indicator.visibility = if (visible) View.VISIBLE else View.GONE
             progress_indicator_toolbar.visibility = View.GONE
         } else {
             unread_switch.visibility = if (visible) View.GONE else View.VISIBLE
+            hourly_switch.visibility = if (visible) View.GONE else View.VISIBLE
             progress_indicator.visibility = View.GONE
             progress_indicator_toolbar.visibility = if (visible) View.VISIBLE else View.GONE
         }
@@ -387,6 +401,3 @@ class PollRssWorker(appContext: Context, workerParams: WorkerParameters) :
 
 private const val REFRESH_INTERVAL_WIFI_MINS = 15L
 private const val REFRESH_INTERVAL_MINS = 50L
-
-private val UPWORK_RSS_URL =
-    URL("https://www.upwork.com/ab/feed/topics/rss?securityToken=6cb37a9e960ed9e0cc7e0bbef8480b89fc9c6d394f866ccf805cfffb02b2f57167360c1f4c38622baa11c78a12b07de5c89ca10de1774204bbf3597e98312894&userUid=1130704448110034944&orgUid=1130704448118423553&sort=local_jobs_on_top&topic=4559588")

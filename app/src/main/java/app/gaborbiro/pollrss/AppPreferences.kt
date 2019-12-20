@@ -33,6 +33,8 @@ object AppPreferences {
     var lastRefresh: Long by prefsUtil.delegate(PREF_LAST_REFRESH, 0L)
 
     var showAll: Boolean by prefsUtil.delegate(PREF_SHOW_ALL, false)
+
+    var showHourly: Boolean by prefsUtil.delegate(PREF_SHOW_HOURLY, true)
 }
 
 private const val PREF_FAVORITES = "FAVORITES"
@@ -42,3 +44,4 @@ private const val PREF_LAST_MARK_ALL_READ_TIMESTAMP = "LAST_MARK_ALL_READ_TIMEST
 private const val PREF_LAST_DISPLAYED_TIMESTAMP = "LAST_DISPLAYED_TIMESTAMP"
 private const val PREF_LAST_REFRESH = "LAST_REFRESH"
 private const val PREF_SHOW_ALL = "SHOW_ALL"
+private const val PREF_SHOW_HOURLY = "SHOW_HOURLY"

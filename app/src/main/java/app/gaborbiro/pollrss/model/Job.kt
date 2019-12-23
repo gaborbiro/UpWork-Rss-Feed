@@ -10,7 +10,7 @@ class Job(
     val link: String,
     @JsonAdapter(LocalDateTimeAdapter::class)
     val localDateTime: LocalDateTime,
-    val description: String,
+    val fullDescription: String,
     val budget: String?,
     val category: String?,
     val skills: String?,

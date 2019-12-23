@@ -10,5 +10,3 @@ class JobUIModel(
     val country: String?,
     var markedAsRead: Boolean
 )
-
-//simpleFormattedTime()

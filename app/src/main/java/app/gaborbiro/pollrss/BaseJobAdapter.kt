@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
 import app.gaborbiro.pollrss.jobs.JobUIModel
+import app.gaborbiro.pollrss.utils.shrinkBetween
 import kotlinx.android.synthetic.main.card_job_base.view.*
 
 abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
@@ -48,8 +49,15 @@ abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
         with(holder) {
             title.text = Html.fromHtml(job.title, 0)
             title.movementMethod = LinkMovementMethod.getInstance()
-            description.text = Html.fromHtml(job.description, 0)
+            description.text = Html.fromHtml(job.description, Html.FROM_HTML_MODE_LEGACY)
             description.movementMethod = LinkMovementMethod.getInstance()
+            if (job.description.length > 400) {
+                description.shrinkBetween(
+                    textSize = R.dimen.fine_print_text_size,
+                    startOffset = 128,
+                    endOffset = 128
+                )
+            }
             posted.text = Html.fromHtml("${job.time} / <b>${job.country}</b>", 0)
             budget.text = job.budget ?: "-"
             title.setOnClickListener {

@@ -7,23 +7,25 @@ import app.gaborbiro.pollrss.utils.simpleFormattedTime
 
 object JobsUIMapper {
 
-    fun map(job: Job) = JobUIModel(
-        job.id,
-        job.title,
-        job.description,
-        job.link,
-        simpleFormattedTime(job),
-        job.budget,
-        job.country,
-        markedAsRead = AppPreferences.markedAsRead[job.id] ?: false
-    )
+    fun map(job: Job): JobUIModel {
+        return JobUIModel(
+            job.id,
+            job.title,
+            job.fullDescription,
+            job.link,
+            simpleFormattedTime(job),
+            job.budget,
+            job.country,
+            markedAsRead = AppPreferences.markedAsRead[job.id] ?: false
+        )
+    }
 
     fun formatDescriptionForNotification(job: Job): String {
         return StringBuilder().apply {
             append(simpleFormattedTime(job) + ", ")
             appendln()
             append("${job.budget ?: "Hourly"}: ")
-            append(Html.fromHtml(job.description, 0))
+            append(Html.fromHtml(job.fullDescription, 0))
             appendln()
             job.skills?.let { append("Skills: ${job.skills}") }
             job.country?.let { append(", from ${job.country}") }

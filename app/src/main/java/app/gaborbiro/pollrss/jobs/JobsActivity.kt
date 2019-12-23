@@ -13,7 +13,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.work.*
 import app.gaborbiro.pollrss.*
 import app.gaborbiro.pollrss.R
-import app.gaborbiro.pollrss.data.JobMapper
+import app.gaborbiro.pollrss.data.JobsMapper
 import app.gaborbiro.pollrss.favorites.FavoritesActivity
 import app.gaborbiro.pollrss.model.Job
 import app.gaborbiro.pollrss.rss.RssReader
@@ -163,7 +163,7 @@ class JobsActivity : AppCompatActivity() {
                 AppPreferences.lastRefresh = epochMillis()
                 RssReader.read(UPWORK_RSS_URL)?.let {
                     if (!emitter.isDisposed) {
-                        emitter.onSuccess(it.rssItems.mapNotNull(JobMapper::map))
+                        emitter.onSuccess(it.rssItems.mapNotNull(JobsMapper::map))
                     }
                 }
             } catch (t: Throwable) {
@@ -364,7 +364,7 @@ class PollRssWorker(appContext: Context, workerParams: WorkerParameters) :
             AppPreferences.lastRefresh = epochMillis()
             RssReader.read(UPWORK_RSS_URL)?.let { rssFeed ->
                 val filteredJobs = rssFeed.rssItems
-                    .mapNotNull(JobMapper::map)
+                    .mapNotNull(JobsMapper::map)
                     .filter {
                         AppPreferences.markedAsRead[it.id] != true
                                 && it.localDateTime.epochMillis() > AppPreferences.lastMarkAllReadTimestamp

@@ -21,45 +21,45 @@
             android:id="@+id/gate_facts_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/description"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
             android:layout_margin="@dimen/medium_margin"
+            android:clipChildren="false"
             app:flexDirection="row"
             app:flexWrap="wrap"
-            android:clipChildren="false">
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/description">
 
             <ImageView
                 android:id="@+id/btn_mark_read"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:padding="8dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?selectableItemBackgroundBorderless"
-                android:tint="@color/black_100"
-                android:src="@drawable/ic_check" />
+                android:padding="8dp"
+                android:src="@drawable/ic_check"
+                android:tint="@color/black_100" />
 
             <ImageView
                 android:id="@+id/btn_share"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:padding="8dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?selectableItemBackgroundBorderless"
-                android:tint="@color/black_100"
-                android:src="@drawable/ic_computer" />
+                android:padding="8dp"
+                android:src="@drawable/ic_computer"
+                android:tint="@color/black_100" />
 
             <ImageView
                 android:id="@+id/btn_favorite"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:padding="8dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?selectableItemBackgroundBorderless"
+                android:padding="8dp"
                 android:src="@drawable/ic_favorite_border" />
         </com.google.android.flexbox.FlexboxLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>

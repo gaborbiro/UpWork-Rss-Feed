@@ -20,24 +20,23 @@ fun TextView.shrinkBetween(
     startOffset: Int,
     endOffset: Int,
     useNearestWhitespace: Boolean = true
-): TextView =
-    apply {
-        this.text.span().apply {
-            val (finalStartOffset, finalEndOffset) = if (useNearestWhitespace) {
-                Pair(nearestWhitespace(startOffset), nearestWhitespace(this.length - endOffset))
-            } else {
-                Pair(startOffset, this.length - endOffset)
-            }
-            setSpan(
-                AbsoluteSizeSpan(context.resources.getDimensionPixelSize(textSize), false),
-                finalStartOffset,
-                finalEndOffset,
-                Spannable.SPAN_INCLUSIVE_INCLUSIVE
-            )
-        }.also {
-            text = it
+) = apply {
+    this.text.span().apply {
+        val (finalStartOffset, finalEndOffset) = if (useNearestWhitespace) {
+            Pair(nearestWhitespace(startOffset), nearestWhitespace(this.length - endOffset))
+        } else {
+            Pair(startOffset, this.length - endOffset)
         }
+        setSpan(
+            AbsoluteSizeSpan(context.resources.getDimensionPixelSize(textSize), false),
+            finalStartOffset,
+            finalEndOffset,
+            Spannable.SPAN_INCLUSIVE_INCLUSIVE
+        )
+    }.also {
+        text = it
     }
+}
 
 private fun SpannableString.nearestWhitespace(index: Int): Int {
     var nearestWhitespace = indexOf(index, CLAMPING_WIDTH_LINE) { it == '\n' }

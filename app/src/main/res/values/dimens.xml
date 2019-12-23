@@ -8,4 +8,5 @@
     <dimen name="extra_large_margin">32dp</dimen>
 
     <dimen name="fine_print_text_size">6sp</dimen>
+    <dimen name="border_radius">4dp</dimen>
 </resources>

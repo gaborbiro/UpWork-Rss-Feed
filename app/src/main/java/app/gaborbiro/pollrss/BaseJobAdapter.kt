@@ -5,6 +5,7 @@ import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
@@ -57,6 +58,13 @@ abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
                     startOffset = 128,
                     endOffset = 128
                 )
+                expandButton.visibility = View.VISIBLE
+                expandButton.setOnClickListener {
+                    description.text = Html.fromHtml(job.description, Html.FROM_HTML_MODE_LEGACY)
+                    it.visibility = View.GONE
+                }
+            } else {
+                expandButton.visibility = View.GONE
             }
             posted.text = Html.fromHtml("${job.time} / <b>${job.country}</b>", 0)
             budget.text = job.budget ?: "-"
@@ -88,6 +96,7 @@ abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
 open class BaseJobViewHolder(view: View) : RecyclerView.ViewHolder(view) {
     val title: TextView = view.title
     val description: TextView = view.description
+    val expandButton: TextView = view.button_expand
     val postedLabel: TextView = view.posted_label
     val posted: TextView = view.posted
     val budgetLabel: TextView = view.budget_label

@@ -91,4 +91,24 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/posted_label"
         tools:text="An advertisements website devoted to metals /exchange rates. Where currency exchange offices  brokers can advertise their competitive rates rates." />
+
+    <TextView
+        android:id="@+id/button_expand"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_rounded"
+        android:backgroundTint="@color/black_40"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?android:selectableItemBackground"
+        android:paddingStart="@dimen/default_margin"
+        android:paddingTop="@dimen/medium_margin"
+        android:paddingEnd="@dimen/default_margin"
+        android:paddingBottom="@dimen/medium_margin"
+        android:text="Expand"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="@id/description"
+        app:layout_constraintEnd_toEndOf="@id/description"
+        app:layout_constraintStart_toStartOf="@id/description"
+        app:layout_constraintTop_toTopOf="@id/description" />
 </merge>

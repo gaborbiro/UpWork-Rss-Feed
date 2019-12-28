@@ -215,12 +215,22 @@ class JobsActivity : AppCompatActivity() {
                     filteredSortedJobs.forEach {
                         AppPreferences.jobs[it.id] = it
                     }
+                    val jobUIModels = filteredSortedJobs.map { JobsUIMapper.map(it) }
                     adapter = JobsAdapter(
-                        filteredSortedJobs.map { JobsUIMapper.map(it) }.toMutableList(),
+                        jobUIModels.toMutableList(),
                         jobAdapterCallback
                     )
                     recycle_view.adapter = adapter
                     recycle_view.visibility = View.VISIBLE
+                    val position = jobUIModels.indexOfFirst {
+                        it.id == intent.getLongExtra(
+                            EXTRA_JOB_ID,
+                            0L
+                        )
+                    }
+                    if (position > 0) {
+                        recycle_view.smoothScrollToPosition(position)
+                    }
                     empty.visibility = View.GONE
                     AppPreferences.lastDisplayedTimestamp =
                         filteredSortedJobs[0].localDateTime.epochMillis()
@@ -357,6 +367,7 @@ class JobsActivity : AppCompatActivity() {
             }
         }
 
+        const val EXTRA_JOB_ID = "EXTRA_JOB_ID"
         private const val EXTRA_MAX_BACKGROUND_JOB_TIMESTAMP = "MAX_BACKGROUND_JOB_TIMESTAMP"
     }
 }
@@ -380,8 +391,14 @@ class PollRssWorker(appContext: Context, workerParams: WorkerParameters) :
                 val filteredJobs = rssFeed.rssItems
                     .mapNotNull(JobsMapper::map)
                     .filter {
-                        AppPreferences.markedAsRead[it.id] != true
-                                && it.localDateTime.epochMillis() > AppPreferences.lastMarkAllReadTimestamp
+                        val showAll =
+                            !AppPreferences.showUnreadOnly || (AppPreferences.markedAsRead[it.id] != true)
+                                    && it.localDateTime.epochMillis() > AppPreferences.lastMarkAllReadTimestamp
+                        val hourly = !AppPreferences.showHourlyOnly || it.budget == null
+                        val minPay = AppPreferences.minPay
+                        val payGoodEnough =
+                            AppPreferences.showHourlyOnly || it.budgetValue == null || it.budgetValue >= minPay
+                        showAll && hourly && payGoodEnough
                     }
                 if (filteredJobs.isNotEmpty()) {
                     if (App.appIsInForeground) {

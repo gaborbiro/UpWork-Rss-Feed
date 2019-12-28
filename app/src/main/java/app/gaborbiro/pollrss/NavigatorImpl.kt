@@ -7,7 +7,10 @@ import app.gaborbiro.pollrss.receiver.NotificationBroadcastReceiver
 import app.gaborbiro.utils.Navigator
 
 class NavigatorImpl : Navigator {
-    override fun getMainActivityIntent() = Intent(appContext, JobsActivity::class.java)
+    override fun getMainActivityIntent(jobId: Long) =
+        Intent(appContext, JobsActivity::class.java).apply {
+            putExtra(JobsActivity.EXTRA_JOB_ID, jobId)
+        }
 
     override fun getBroadcastIntent() =
         Intent(appContext, NotificationBroadcastReceiver::class.java)

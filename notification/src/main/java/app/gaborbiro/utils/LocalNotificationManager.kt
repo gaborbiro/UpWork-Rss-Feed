@@ -35,7 +35,7 @@ object LocalNotificationManager {
     ) {
         notificationManager.notify(
             id.toInt(), buildNotification(
-                pendingIntent = getLaunchIntent(),
+                pendingIntent = getLaunchIntent(id),
                 channel = CHANNEL_NEW_JOBS,
                 title = title,
                 message = messageBody,
@@ -72,11 +72,11 @@ object LocalNotificationManager {
         notificationManager.cancel(id.toInt())
     }
 
-    private fun getLaunchIntent(): PendingIntent {
+    private fun getLaunchIntent(id: Long): PendingIntent {
         return PendingIntent.getActivity(
             appContext,
             0,
-            NavigatorProvider.navigator.getMainActivityIntent(),
+            NavigatorProvider.navigator.getMainActivityIntent(id),
             0
         )
     }

@@ -1,18 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_filters"
+        android:icon="@drawable/ic_filter"
+        android:orderInCategory="97"
+        android:title="Filters"
+        app:showAsAction="always" />
+
     <item
         android:id="@+id/action_mark_all"
         android:icon="@drawable/ic_check"
         android:orderInCategory="98"
         android:title="Mark all as read"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="always" />
+
     <item
         android:id="@+id/action_favorites"
         android:icon="@drawable/ic_favorite"
         android:orderInCategory="99"
         android:title="Favorites"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="always" />
+
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"

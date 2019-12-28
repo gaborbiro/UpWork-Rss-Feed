@@ -55,6 +55,10 @@ object JobsMapper {
             localDateTime = zonedDateTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime(),
             fullDescription = cleanedUpDescription,
             budget = budgetGroups?.get(1)?.value?.cleanWS(),
+            budgetValue = budgetGroups?.get(1)?.value?.cleanWS()?.substring(1)?.replace(
+                Regex("[,\\.]"),
+                ""
+            )?.toInt(),
             category = categoryGroups?.get(1)?.value?.cleanWS(),
             skills = skillGroups?.get(1)?.value?.cleanWS(),
             country = countryGroups?.get(1)?.value?.cleanWS()

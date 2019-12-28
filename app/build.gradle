@@ -43,14 +43,15 @@ dependencies {
     implementation support.appCompat
     implementation support.constraintLayout
     implementation support.material
-    implementation anko.common
     implementation rxjava.core
     implementation rxjava.android
     implementation anko.common
+    implementation anko.appCompat
+    implementation anko.sdk25
 
     implementation gson
     implementation prefsUtil
     implementation "com.google.android:flexbox:1.1.0"
     implementation "android.arch.work:work-runtime:1.0.1"
-    implementation 'androidx.preference:preference:1.1.0-rc01'
+    implementation 'androidx.preference:preference:1.1.0'
 }

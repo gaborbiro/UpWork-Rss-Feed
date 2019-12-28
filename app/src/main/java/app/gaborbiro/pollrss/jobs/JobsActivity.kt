@@ -18,10 +18,7 @@ import app.gaborbiro.pollrss.favorites.FavoritesActivity
 import app.gaborbiro.pollrss.model.Job
 import app.gaborbiro.pollrss.rss.RssReader
 import app.gaborbiro.pollrss.settings.SettingsActivity
-import app.gaborbiro.pollrss.utils.epochMillis
-import app.gaborbiro.pollrss.utils.openLink
-import app.gaborbiro.pollrss.utils.share
-import app.gaborbiro.pollrss.utils.toZDT
+import app.gaborbiro.pollrss.utils.*
 import app.gaborbiro.utils.LocalNotificationManager
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.Maybe
@@ -30,6 +27,7 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_jobs.*
 import kotlinx.android.synthetic.main.content_jobs.*
+import kotlinx.android.synthetic.main.dialog_filters.view.*
 import org.jetbrains.anko.*
 import java.time.Duration
 import java.time.ZonedDateTime
@@ -41,6 +39,7 @@ class JobsActivity : AppCompatActivity() {
     private var adapter: JobsAdapter? = null
     private var newJobsSnackbar: Snackbar? = null
     private var messageToShowOnLoad: String? = null
+    private var filtersMenu: MenuItem? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,38 +48,8 @@ class JobsActivity : AppCompatActivity() {
 
         swipe_refresh_layout.setOnRefreshListener {
             loadJobs()
-            swipe_refresh_layout.isRefreshing = true
-        }
-        unread_switch.isChecked = AppPreferences.showAll
-        unread_switch.setOnCheckedChangeListener { _, isChecked ->
-            AppPreferences.showAll = isChecked
-            loadJobs()
-            val message = if (isChecked) {
-                "Showing all jobs"
-            } else {
-                "Showing new jobs only"
-            }
-            makeBottomSnackBar(message, Snackbar.LENGTH_SHORT).show()
-            updateUnreadSwitchText()
-        }
-        updateUnreadSwitchText()
-
-        hourly_switch.isChecked = AppPreferences.showHourly
-        hourly_switch.setOnCheckedChangeListener { _, isChecked ->
-            AppPreferences.showHourly = isChecked
-            loadJobs()
-            val message = if (isChecked) {
-                "Showing hourly jobs"
-            } else {
-                "Showing all jobs"
-            }
-            makeBottomSnackBar(message, Snackbar.LENGTH_LONG).show()
         }
         AppPreferences.cleanupJobs()
-    }
-
-    private fun updateUnreadSwitchText() {
-        unread_switch.text = if (AppPreferences.showAll) "All" else "New"
     }
 
     override fun onResume() {
@@ -92,11 +61,58 @@ class JobsActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.jobs, menu)
+        filtersMenu = menu.findItem(R.id.action_filters)
+        if (progress_indicator.visibility == View.VISIBLE) {
+            filtersMenu?.isVisible = false
+            progress_indicator_toolbar.visibility = View.VISIBLE
+        }
+
         return super.onCreateOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.action_filters -> {
+                alert {
+                    customView = layoutInflater.inflate(R.layout.dialog_filters, null).apply {
+                        switch_show_hourly_only.isChecked = AppPreferences.showHourlyOnly
+                        edit_text_min_pay.setText(AppPreferences.minPay.toString())
+                        edit_text_min_pay.addTextChangedListener(object : TextChangeListener() {
+                            override fun onTextChanged(
+                                s: CharSequence,
+                                start: Int,
+                                before: Int,
+                                count: Int
+                            ) {
+                                AppPreferences.minPay = s.toString().let {
+                                    if (it.isBlank()) {
+                                        0
+                                    } else {
+                                        it.toInt()
+                                    }
+                                }
+                            }
+                        })
+                        group_min_pay.visibility =
+                            if (!AppPreferences.showHourlyOnly) View.VISIBLE else View.GONE
+                        switch_show_hourly_only.setOnCheckedChangeListener { _, isChecked ->
+                            AppPreferences.showHourlyOnly = isChecked
+                            group_min_pay.visibility =
+                                if (AppPreferences.showHourlyOnly) View.GONE else View.VISIBLE
+                        }
+                        switch_show_unread_only.isChecked = AppPreferences.showUnreadOnly
+                        switch_show_unread_only.setOnCheckedChangeListener { _, isChecked ->
+                            AppPreferences.showUnreadOnly = isChecked
+                        }
+                    }
+                    positiveButton("Apply") {
+                        loadJobs()
+                    }
+                    onCancelled {
+                        loadJobs()
+                    }
+                }.show()
+            }
             R.id.action_mark_all -> {
                 alert {
                     message = "Mark all unread jobs as read?"
@@ -105,7 +121,7 @@ class JobsActivity : AppCompatActivity() {
                         AppPreferences.markedAsRead.clear()
                         AppPreferences.cleanupJobs()
                         loadJobs()
-                        if (AppPreferences.showAll) {
+                        if (!AppPreferences.showUnreadOnly) {
                             messageToShowOnLoad =
                                 "You're in \"Show all\" mode. Toggle the switch at the top of the " +
                                         "screen if you only want to see new jobs."
@@ -154,9 +170,7 @@ class JobsActivity : AppCompatActivity() {
     }
 
     private fun loadJobs(onFinish: (() -> Unit)? = null) {
-        if (!swipe_refresh_layout.isRefreshing) {
-            setProgressVisible(true)
-        }
+        setProgressVisible(true)
         jobsLoaderDisposable?.dispose()
         jobsLoaderDisposable = Maybe.create<List<Job>> { emitter ->
             try {
@@ -188,10 +202,13 @@ class JobsActivity : AppCompatActivity() {
                 val filteredSortedJobs = jobs
                     .filter {
                         val showAll =
-                            AppPreferences.showAll || (AppPreferences.markedAsRead[it.id] != true)
+                            !AppPreferences.showUnreadOnly || (AppPreferences.markedAsRead[it.id] != true)
                                     && it.localDateTime.epochMillis() > AppPreferences.lastMarkAllReadTimestamp
-                        val hourly = !AppPreferences.showHourly || it.budget == null
-                        showAll && hourly
+                        val hourly = !AppPreferences.showHourlyOnly || it.budget == null
+                        val minPay = AppPreferences.minPay
+                        val payGoodEnough =
+                            AppPreferences.showHourlyOnly || it.budgetValue == null || it.budgetValue >= minPay
+                        showAll && hourly && payGoodEnough
                     }
                     .sortedByDescending { it.localDateTime }
                 if (filteredSortedJobs.isNotEmpty()) {
@@ -218,7 +235,7 @@ class JobsActivity : AppCompatActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
                 }
-                empty.text = if (AppPreferences.showAll) "No jobs" else "No new jobs"
+                empty.text = if (!AppPreferences.showUnreadOnly) "No jobs" else "No new jobs"
                 messageToShowOnLoad?.let {
                     makeBottomSnackBar(it, Snackbar.LENGTH_LONG).show()
                     messageToShowOnLoad = null
@@ -231,14 +248,11 @@ class JobsActivity : AppCompatActivity() {
     }
 
     private fun setProgressVisible(visible: Boolean) {
+        filtersMenu?.isVisible = !visible
         if (adapter?.itemCount ?: 0 == 0) {
-            unread_switch.visibility = View.VISIBLE
-            hourly_switch.visibility = View.VISIBLE
             progress_indicator.visibility = if (visible) View.VISIBLE else View.GONE
             progress_indicator_toolbar.visibility = View.GONE
         } else {
-            unread_switch.visibility = if (visible) View.GONE else View.VISIBLE
-            hourly_switch.visibility = if (visible) View.GONE else View.VISIBLE
             progress_indicator.visibility = View.GONE
             progress_indicator_toolbar.visibility = if (visible) View.VISIBLE else View.GONE
         }
@@ -250,7 +264,7 @@ class JobsActivity : AppCompatActivity() {
         }
 
         override fun onMarkedAsRead(job: JobUIModel) {
-            if (!AppPreferences.showAll) {
+            if (AppPreferences.showUnreadOnly) {
                 adapter?.removeItem(job)
                 AppPreferences.markedAsRead[job.id] = true
                 makeBottomSnackBar("Marked as read", Snackbar.LENGTH_SHORT).show()

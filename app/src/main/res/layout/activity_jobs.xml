@@ -20,27 +20,13 @@
                 android:layout_gravity="end"
                 android:orientation="horizontal">
 
-                <Switch
-                    android:id="@+id/hourly_switch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:thumb="@drawable/ic_hour"
-                    android:layout_marginEnd="@dimen/default_margin"
-                    android:textColor="@color/white" />
-
-                <Switch
-                    android:id="@+id/unread_switch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/white"
-                    tools:text="All" />
-
                 <androidx.core.widget.ContentLoadingProgressBar
                     android:id="@+id/progress_indicator_toolbar"
                     style="?android:progressBarStyleSmall"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
+                    android:layout_marginEnd="@dimen/default_margin"
                     android:indeterminateTint="@color/white" />
             </LinearLayout>
         </androidx.appcompat.widget.Toolbar>

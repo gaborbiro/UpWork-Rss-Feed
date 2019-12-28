@@ -12,6 +12,7 @@ class Job(
     val localDateTime: LocalDateTime,
     val fullDescription: String,
     val budget: String?,
+    val budgetValue: Int?,
     val category: String?,
     val skills: String?,
     val country: String?

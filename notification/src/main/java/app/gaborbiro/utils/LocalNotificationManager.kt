@@ -15,6 +15,7 @@ import app.gaborbiro.pollrss.AppContextProvider
 import app.gaborbiro.pollrss.utils.PUSHBULLET_PACKAGE
 import app.gaborbiro.pollrss.utils.isPackageInstalled
 import com.piottechnologies.stationmaster.notifications.R
+import kotlin.random.Random
 
 
 object LocalNotificationManager {
@@ -75,9 +76,9 @@ object LocalNotificationManager {
     private fun getLaunchIntent(id: Long): PendingIntent {
         return PendingIntent.getActivity(
             appContext,
-            0,
+            id.toInt(),
             NavigatorProvider.navigator.getMainActivityIntent(id),
-            0
+            PendingIntent.FLAG_CANCEL_CURRENT
         )
     }
 

@@ -54,9 +54,7 @@ class JobsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        loadJobs {
-            startBackgroundPolling()
-        }
+        loadJobs(intent.getLongExtra(EXTRA_JOB_ID, 0L)) { startBackgroundPolling() }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -138,6 +136,12 @@ class JobsActivity : AppCompatActivity() {
             R.id.action_settings -> {
                 SettingsActivity.launch(this)
             }
+            R.id.action_debug_notif -> {
+                AppPreferences.markedAsRead.clear()
+                Thread {
+                    checkNewJobsAndShowNotification(applicationContext, forceNotification = true)
+                }.start()
+            }
         }
         return super.onOptionsItemSelected(item)
     }
@@ -151,9 +155,7 @@ class JobsActivity : AppCompatActivity() {
         ) {
             newJobsSnackbar?.dismiss()
             newJobsSnackbar = makeTopSnackBar("New jobs are available", Snackbar.LENGTH_INDEFINITE)
-                .setAction("Refresh") {
-                    loadJobs()
-                }
+                .setAction("Refresh") { loadJobs() }
             newJobsSnackbar?.show()
         }
     }
@@ -169,7 +171,7 @@ class JobsActivity : AppCompatActivity() {
         jobsLoaderDisposable?.dispose()
     }
 
-    private fun loadJobs(onFinish: (() -> Unit)? = null) {
+    private fun loadJobs(selectedJobId: Long? = null, onFinish: (() -> Unit)? = null) {
         setProgressVisible(true)
         jobsLoaderDisposable?.dispose()
         jobsLoaderDisposable = Maybe.create<List<Job>> { emitter ->
@@ -198,63 +200,67 @@ class JobsActivity : AppCompatActivity() {
             .doAfterTerminate {
                 onFinish?.invoke()
             }
-            .subscribe({ jobs: List<Job> ->
-                val filteredSortedJobs = jobs
-                    .filter {
-                        val showAll =
-                            !AppPreferences.showUnreadOnly || (AppPreferences.markedAsRead[it.id] != true)
-                                    && it.localDateTime.epochMillis() > AppPreferences.lastMarkAllReadTimestamp
-                        val hourly = !AppPreferences.showHourlyOnly || it.budget == null
-                        val minPay = AppPreferences.minPay
-                        val payGoodEnough =
-                            AppPreferences.showHourlyOnly || it.budgetValue == null || it.budgetValue >= minPay
-                        showAll && hourly && payGoodEnough
-                    }
-                    .sortedByDescending { it.localDateTime }
-                if (filteredSortedJobs.isNotEmpty()) {
-                    filteredSortedJobs.forEach {
-                        AppPreferences.jobs[it.id] = it
-                    }
-                    val jobUIModels = filteredSortedJobs.map { JobsUIMapper.map(it) }
-                    adapter = JobsAdapter(
-                        jobUIModels.toMutableList(),
-                        jobAdapterCallback
-                    )
-                    recycle_view.adapter = adapter
-                    recycle_view.visibility = View.VISIBLE
-                    val position = jobUIModels.indexOfFirst {
-                        it.id == intent.getLongExtra(
-                            EXTRA_JOB_ID,
-                            0L
-                        )
-                    }
-                    if (position > 0) {
-                        recycle_view.smoothScrollToPosition(position)
-                    }
-                    empty.visibility = View.GONE
-                    AppPreferences.lastDisplayedTimestamp =
-                        filteredSortedJobs[0].localDateTime.epochMillis()
-                } else {
-                    recycle_view.visibility = View.GONE
-                    empty.visibility = View.VISIBLE
-                }
-                if (BuildConfig.DEBUG) {
-                    Toast.makeText(
-                        this,
-                        "Jobs stored: " + AppPreferences.jobs.size,
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-                empty.text = if (!AppPreferences.showUnreadOnly) "No jobs" else "No new jobs"
-                messageToShowOnLoad?.let {
-                    makeBottomSnackBar(it, Snackbar.LENGTH_LONG).show()
-                    messageToShowOnLoad = null
-                }
-            },
+            .subscribe(
+                { handleJobs(it, selectedJobId) },
                 {
                     it.printStackTrace()
                     it.message?.let(this::longToast) ?: toast("Oops. Something went wrong!")
                 })
+    }
+
+    private fun handleJobs(jobs: List<Job>, selectJobId: Long? = null) {
+        val filteredSortedJobs = jobs
+            .filter {
+                val showAll =
+                    !AppPreferences.showUnreadOnly || (AppPreferences.markedAsRead[it.id] != true)
+                            && it.localDateTime.epochMillis() > AppPreferences.lastMarkAllReadTimestamp
+                val hourly = !AppPreferences.showHourlyOnly || it.budget == null
+                val minPay = AppPreferences.minPay
+                val payGoodEnough =
+                    AppPreferences.showHourlyOnly || it.budgetValue == null || it.budgetValue >= minPay
+                showAll && hourly && payGoodEnough
+            }
+            .sortedByDescending { it.localDateTime }
+        if (filteredSortedJobs.isNotEmpty()) {
+            filteredSortedJobs.forEach {
+                AppPreferences.jobs[it.id] = it
+            }
+            val jobUIModels = filteredSortedJobs.map { JobsUIMapper.map(it) }
+            adapter = JobsAdapter(
+                jobUIModels.toMutableList(),
+                jobAdapterCallback
+            )
+            recycle_view.adapter = adapter
+            recycle_view.visibility = View.VISIBLE
+            if (selectJobId != null) {
+                val position = jobUIModels.indexOfFirst {
+                    it.id == selectJobId
+                }
+                if (position > 0) {
+                    Toast.makeText(this@JobsActivity, "Scroll to: $position", Toast.LENGTH_SHORT)
+                        .show()
+                    recycle_view.scrollToPosition(position)
+                }
+            }
+            empty.visibility = View.GONE
+            AppPreferences.lastDisplayedTimestamp =
+                filteredSortedJobs[0].localDateTime.epochMillis()
+        } else {
+            recycle_view.visibility = View.GONE
+            empty.visibility = View.VISIBLE
+        }
+        if (BuildConfig.DEBUG) {
+            Toast.makeText(
+                this,
+                "Jobs stored: " + AppPreferences.jobs.size,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+        empty.text = if (!AppPreferences.showUnreadOnly) "No jobs" else "No new jobs"
+        messageToShowOnLoad?.let {
+            makeBottomSnackBar(it, Snackbar.LENGTH_LONG).show()
+            messageToShowOnLoad = null
+        }
     }
 
     private fun setProgressVisible(visible: Boolean) {
@@ -387,42 +393,7 @@ class PollRssWorker(appContext: Context, workerParams: WorkerParameters) :
         }
         try {
             AppPreferences.lastRefresh = epochMillis()
-            RssReader.read(UPWORK_RSS_URL)?.let { rssFeed ->
-                val filteredJobs = rssFeed.rssItems
-                    .mapNotNull(JobsMapper::map)
-                    .filter {
-                        val showAll =
-                            !AppPreferences.showUnreadOnly || (AppPreferences.markedAsRead[it.id] != true)
-                                    && it.localDateTime.epochMillis() > AppPreferences.lastMarkAllReadTimestamp
-                        val hourly = !AppPreferences.showHourlyOnly || it.budget == null
-                        val minPay = AppPreferences.minPay
-                        val payGoodEnough =
-                            AppPreferences.showHourlyOnly || it.budgetValue == null || it.budgetValue >= minPay
-                        showAll && hourly && payGoodEnough
-                    }
-                if (filteredJobs.isNotEmpty()) {
-                    if (App.appIsInForeground) {
-                        JobsActivity.sendNewJobsWarningIntent(
-                            applicationContext,
-                            filteredJobs.maxBy { it.localDateTime }!!.localDateTime.epochMillis()
-                        )
-                    } else {
-                        filteredJobs.sortedByDescending { it.localDateTime }
-                            .take(5)
-                            .reversed().forEach { job ->
-                                AppPreferences.jobs[job.id] = job
-                                LocalNotificationManager.showNewJobNotification(
-                                    id = job.id,
-                                    title = job.title,
-                                    messageBody = JobsUIMapper.formatDescriptionForNotification(job)
-                                )
-                            }
-                    }
-                }
-                return Result.success()
-            } ?: run {
-                return Result.failure()
-            }
+            return checkNewJobsAndShowNotification(applicationContext, forceNotification = false)
         } catch (t: Throwable) {
             t.printStackTrace()
             return Result.failure()
@@ -430,5 +401,47 @@ class PollRssWorker(appContext: Context, workerParams: WorkerParameters) :
     }
 }
 
-private const val REFRESH_INTERVAL_WIFI_MINS = 15L
-private const val REFRESH_INTERVAL_MINS = 50L
+fun checkNewJobsAndShowNotification(
+    applicationContext: Context,
+    forceNotification: Boolean
+): ListenableWorker.Result {
+    RssReader.read(UPWORK_RSS_URL)?.let { rssFeed ->
+        val filteredJobs = rssFeed.rssItems
+            .mapNotNull(JobsMapper::map)
+            .filter {
+                val showAll =
+                    !AppPreferences.showUnreadOnly || (AppPreferences.markedAsRead[it.id] != true)
+                            && it.localDateTime.epochMillis() > AppPreferences.lastMarkAllReadTimestamp
+                val hourly = !AppPreferences.showHourlyOnly || it.budget == null
+                val minPay = AppPreferences.minPay
+                val payGoodEnough =
+                    AppPreferences.showHourlyOnly || it.budgetValue == null || it.budgetValue >= minPay
+                showAll && hourly && payGoodEnough
+            }
+        if (filteredJobs.isNotEmpty()) {
+            if (App.appIsInForeground && !forceNotification) {
+                JobsActivity.sendNewJobsWarningIntent(
+                    applicationContext,
+                    filteredJobs.maxBy { it.localDateTime }!!.localDateTime.epochMillis()
+                )
+            } else {
+                filteredJobs.sortedByDescending { it.localDateTime }
+                    .take(5)
+                    .reversed().forEach { job ->
+                        AppPreferences.jobs[job.id] = job
+                        LocalNotificationManager.showNewJobNotification(
+                            id = job.id,
+                            title = job.title,
+                            messageBody = JobsUIMapper.formatDescriptionForNotification(job)
+                        )
+                    }
+            }
+        }
+        return ListenableWorker.Result.success()
+    } ?: run {
+        return ListenableWorker.Result.failure()
+    }
+}
+
+private const val REFRESH_INTERVAL_WIFI_MINS = 60L
+private const val REFRESH_INTERVAL_MINS = 120L

@@ -5,7 +5,6 @@ import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.TextView
 import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
@@ -17,8 +16,7 @@ abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
     private val jobs: MutableList<JobUIModel>,
     private val callback: BaseJobAdapterCallback,
     @LayoutRes val itemLayout: Int
-) :
-    RecyclerView.Adapter<VH>() {
+) : RecyclerView.Adapter<VH>() {
 
     abstract fun createViewHolder(view: View): VH
 
@@ -50,9 +48,17 @@ abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
         with(holder) {
             title.text = Html.fromHtml(job.title, 0)
             title.movementMethod = LinkMovementMethod.getInstance()
-            description.text = Html.fromHtml(job.description, Html.FROM_HTML_MODE_LEGACY)
             description.movementMethod = LinkMovementMethod.getInstance()
-            if (job.description.length > 400) {
+            val length = job.description.length
+            if (length > 500) {
+                val remove = (length - 1000) / 2
+                val text = if (remove > 0) {
+                    job.description.substring(0, length / 2 - remove) + "\n...\n" +
+                            job.description.substring(length / 2 + remove, length - 1)
+                } else {
+                    job.description
+                }
+                description.text = Html.fromHtml(text, Html.FROM_HTML_MODE_LEGACY)
                 description.shrinkBetween(
                     textSize = R.dimen.fine_print_text_size,
                     startOffset = 128,
@@ -64,6 +70,7 @@ abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
                     it.visibility = View.GONE
                 }
             } else {
+                description.text = Html.fromHtml(job.description, Html.FROM_HTML_MODE_LEGACY)
                 expandButton.visibility = View.GONE
             }
             posted.text = Html.fromHtml("${job.time} / <b>${job.country}</b>", 0)

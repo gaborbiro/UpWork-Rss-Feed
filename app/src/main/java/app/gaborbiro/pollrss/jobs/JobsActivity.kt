@@ -3,6 +3,7 @@ package app.gaborbiro.pollrss.jobs
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.text.Html
 import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
@@ -55,6 +56,7 @@ class JobsActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         loadJobs(intent.getLongExtra(EXTRA_JOB_ID, 0L)) { startBackgroundPolling() }
+        LocalNotificationManager.hideNotifications()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -72,8 +74,11 @@ class JobsActivity : AppCompatActivity() {
         when (item.itemId) {
             R.id.action_filters -> {
                 alert {
+                    title = "Filters"
                     customView = layoutInflater.inflate(R.layout.dialog_filters, null).apply {
                         switch_show_hourly_only.isChecked = AppPreferences.showHourlyOnly
+                        label_hourly.text = Html.fromHtml(getString(R.string.filter_hourly))
+                        label_unread.text = Html.fromHtml(getString(R.string.filter_unread))
                         edit_text_min_pay.setText(AppPreferences.minPay.toString())
                         edit_text_min_pay.addTextChangedListener(object : TextChangeListener() {
                             override fun onTextChanged(
@@ -133,11 +138,10 @@ class JobsActivity : AppCompatActivity() {
                 FavoritesActivity.start(this)
                 return true
             }
-            R.id.action_settings -> {
-                SettingsActivity.launch(this)
-            }
+//            R.id.action_settings -> {
+//                SettingsActivity.launch(this)
+//            }
             R.id.action_debug_notif -> {
-                AppPreferences.markedAsRead.clear()
                 Thread {
                     checkNewJobsAndShowNotification(applicationContext, forceNotification = true)
                 }.start()
@@ -175,22 +179,22 @@ class JobsActivity : AppCompatActivity() {
         setProgressVisible(true)
         jobsLoaderDisposable?.dispose()
         jobsLoaderDisposable = Maybe.create<List<Job>> { emitter ->
-            try {
-                AppPreferences.lastRefresh = epochMillis()
-                RssReader.read(UPWORK_RSS_URL)?.let {
+                try {
+                    AppPreferences.lastRefresh = epochMillis()
+                    RssReader.read(UPWORK_RSS_URL)?.let {
+                        if (!emitter.isDisposed) {
+                            emitter.onSuccess(it.rssItems.mapNotNull(JobsMapper::map))
+                        }
+                    }
+                } catch (t: Throwable) {
                     if (!emitter.isDisposed) {
-                        emitter.onSuccess(it.rssItems.mapNotNull(JobsMapper::map))
+                        emitter.onError(t)
                     }
                 }
-            } catch (t: Throwable) {
                 if (!emitter.isDisposed) {
-                    emitter.onError(t)
+                    emitter.onComplete()
                 }
             }
-            if (!emitter.isDisposed) {
-                emitter.onComplete()
-            }
-        }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnTerminate {
@@ -210,16 +214,7 @@ class JobsActivity : AppCompatActivity() {
 
     private fun handleJobs(jobs: List<Job>, selectJobId: Long? = null) {
         val filteredSortedJobs = jobs
-            .filter {
-                val showAll =
-                    !AppPreferences.showUnreadOnly || (AppPreferences.markedAsRead[it.id] != true)
-                            && it.localDateTime.epochMillis() > AppPreferences.lastMarkAllReadTimestamp
-                val hourly = !AppPreferences.showHourlyOnly || it.budget == null
-                val minPay = AppPreferences.minPay
-                val payGoodEnough =
-                    AppPreferences.showHourlyOnly || it.budgetValue == null || it.budgetValue >= minPay
-                showAll && hourly && payGoodEnough
-            }
+            .filter(::shouldShowJob)
             .sortedByDescending { it.localDateTime }
         if (filteredSortedJobs.isNotEmpty()) {
             filteredSortedJobs.forEach {
@@ -280,9 +275,9 @@ class JobsActivity : AppCompatActivity() {
         }
 
         override fun onMarkedAsRead(job: JobUIModel) {
+            AppPreferences.markedAsRead[job.id] = true
             if (AppPreferences.showUnreadOnly) {
                 adapter?.removeItem(job)
-                AppPreferences.markedAsRead[job.id] = true
                 makeBottomSnackBar("Marked as read", Snackbar.LENGTH_SHORT).show()
                 if (adapter?.itemCount == 0) {
                     recycle_view.visibility = View.GONE
@@ -322,9 +317,9 @@ class JobsActivity : AppCompatActivity() {
             .build()
         val fetchRequest =
             PeriodicWorkRequest.Builder(
-                PollRssWorker::class.java,
-                Duration.ofMinutes(REFRESH_INTERVAL_MINS)
-            )
+                    PollRssWorker::class.java,
+                    Duration.ofMinutes(REFRESH_INTERVAL_MINS)
+                )
                 .addTag("PollRss")
                 .setConstraints(allConstraints)
                 .build()
@@ -336,9 +331,9 @@ class JobsActivity : AppCompatActivity() {
             .build()
         val wifiFetchRequest =
             PeriodicWorkRequest.Builder(
-                PollRssWorker::class.java,
-                Duration.ofMinutes(REFRESH_INTERVAL_WIFI_MINS)
-            )
+                    PollRssWorker::class.java,
+                    Duration.ofMinutes(REFRESH_INTERVAL_WIFI_MINS)
+                )
                 .addTag("PollRssWifiOnly")
                 .setConstraints(wifiConstraints)
                 .build()
@@ -391,12 +386,12 @@ class PollRssWorker(appContext: Context, workerParams: WorkerParameters) :
         ) {
             return Result.failure()
         }
-        try {
+        return try {
             AppPreferences.lastRefresh = epochMillis()
-            return checkNewJobsAndShowNotification(applicationContext, forceNotification = false)
+            checkNewJobsAndShowNotification(applicationContext, forceNotification = false)
         } catch (t: Throwable) {
             t.printStackTrace()
-            return Result.failure()
+            Result.failure()
         }
     }
 }
@@ -408,16 +403,7 @@ fun checkNewJobsAndShowNotification(
     RssReader.read(UPWORK_RSS_URL)?.let { rssFeed ->
         val filteredJobs = rssFeed.rssItems
             .mapNotNull(JobsMapper::map)
-            .filter {
-                val showAll =
-                    !AppPreferences.showUnreadOnly || (AppPreferences.markedAsRead[it.id] != true)
-                            && it.localDateTime.epochMillis() > AppPreferences.lastMarkAllReadTimestamp
-                val hourly = !AppPreferences.showHourlyOnly || it.budget == null
-                val minPay = AppPreferences.minPay
-                val payGoodEnough =
-                    AppPreferences.showHourlyOnly || it.budgetValue == null || it.budgetValue >= minPay
-                showAll && hourly && payGoodEnough
-            }
+            .filter(::shouldShowJob)
         if (filteredJobs.isNotEmpty()) {
             if (App.appIsInForeground && !forceNotification) {
                 JobsActivity.sendNewJobsWarningIntent(
@@ -441,6 +427,17 @@ fun checkNewJobsAndShowNotification(
     } ?: run {
         return ListenableWorker.Result.failure()
     }
+}
+
+fun shouldShowJob(job: Job): Boolean {
+    val showAll =
+        !AppPreferences.showUnreadOnly || (AppPreferences.markedAsRead[job.id] != true)
+                && job.localDateTime.epochMillis() > AppPreferences.lastMarkAllReadTimestamp
+    val hourly = !AppPreferences.showHourlyOnly || job.budget == null
+    val minPay = AppPreferences.minPay
+    val payGoodEnough =
+        AppPreferences.showHourlyOnly || job.budgetValue == null || job.budgetValue >= minPay
+    return showAll && hourly && payGoodEnough
 }
 
 private const val REFRESH_INTERVAL_WIFI_MINS = 60L

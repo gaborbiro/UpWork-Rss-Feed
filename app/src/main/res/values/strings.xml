@@ -14,4 +14,7 @@
         <item quantity="other">%1$d days ago</item>
     </plurals>
     <string name="title_activity_settings">Settings</string>
+
+    <string name="filter_hourly"><Data><![CDATA[Show <b>hourly</b> jobs only]]></Data></string>
+    <string name="filter_unread"><Data><![CDATA[Show <b>unread</b> jobs only]]></Data></string>
 </resources>

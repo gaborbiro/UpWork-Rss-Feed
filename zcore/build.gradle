@@ -3,5 +3,5 @@ apply from: '../config-android.gradle'
 
 dependencies {
     implementation kotlinDeps.stdlib
-    implementation support.coreKtx
+    implementation androidx.coreKtx
 }

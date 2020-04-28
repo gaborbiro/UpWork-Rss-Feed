@@ -3,7 +3,6 @@ package app.gaborbiro.utils
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
@@ -11,29 +10,24 @@ import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.getSystemService
 import app.gaborbiro.pollrss.AppContextProvider
 import app.gaborbiro.pollrss.utils.PUSHBULLET_PACKAGE
 import app.gaborbiro.pollrss.utils.isPackageInstalled
 import com.piottechnologies.stationmaster.notifications.R
-import kotlin.random.Random
 
 
 object LocalNotificationManager {
 
     private val appContext = AppContextProvider.appContext
-    private val notificationManager =
-        appContext.getSystemService(NotificationManager::class.java)
+    private val notificationManager: NotificationManager = appContext.getSystemService()!!
     private val notificationColor: Int = ContextCompat.getColor(appContext, android.R.color.white)
 
     init {
         createChannels()
     }
 
-    fun showNewJobNotification(
-        id: Long,
-        title: String?,
-        messageBody: String?
-    ) {
+    fun showNewJobNotification(id: Long, title: String?, messageBody: String?) {
         notificationManager.notify(
             id.toInt(), buildNotification(
                 pendingIntent = getLaunchIntent(id),
@@ -73,21 +67,14 @@ object LocalNotificationManager {
         notificationManager.cancel(id.toInt())
     }
 
-    private fun getLaunchIntent(id: Long): PendingIntent {
+    private fun getLaunchIntent(jobId: Long): PendingIntent {
         return PendingIntent.getActivity(
             appContext,
-            id.toInt(),
-            NavigatorProvider.navigator.getMainActivityIntent(id),
+            jobId.toInt(),
+            NavigatorProvider.navigator.getMainActivityIntent(jobId),
             PendingIntent.FLAG_CANCEL_CURRENT
         )
     }
-
-    private fun getViewIntent(link: String) = PendingIntent.getActivity(
-        appContext,
-        1,
-        Intent(Intent.ACTION_VIEW, Uri.parse(link)),
-        0
-    )
 
     private fun getMarkReadIntent(id: Long) =
         getBroadcastIntent(ACTION_MARK_READ + id)

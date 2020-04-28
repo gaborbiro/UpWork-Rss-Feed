@@ -11,7 +11,7 @@
 
     <item
         android:id="@+id/action_mark_all"
-        android:icon="@drawable/ic_check"
+        android:icon="@drawable/ic_viewed"
         android:orderInCategory="97"
         android:title="Mark all as read"
         app:showAsAction="always" />
@@ -23,12 +23,12 @@
         android:title="Favorites"
         app:showAsAction="always" />
 
-    <item
+   <!-- <item
         android:id="@+id/action_settings"
         android:orderInCategory="99"
         android:title="Settings"
         app:showAsAction="never" />
-
+-->
     <item
         android:id="@+id/action_debug_notif"
         android:orderInCategory="100"

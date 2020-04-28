@@ -38,7 +38,7 @@
                 android:focusable="true"
                 android:foreground="?selectableItemBackgroundBorderless"
                 android:padding="8dp"
-                android:src="@drawable/ic_check"
+                tools:src="@drawable/ic_viewed"
                 android:tint="@color/black_100" />
 
             <ImageView

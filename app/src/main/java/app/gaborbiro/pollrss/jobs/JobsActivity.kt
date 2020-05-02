@@ -118,7 +118,7 @@ class JobsActivity : AppCompatActivity() {
             }
             R.id.action_mark_all -> {
                 alert {
-                    message = "Mark all unread jobs as read?"
+                    message = "Mark all jobs as read?"
                     yesButton {
                         AppPreferences.lastMarkAllReadTimestamp = epochMillis()
                         AppPreferences.markedAsRead.clear()

@@ -18,7 +18,7 @@
 
     <item
         android:id="@+id/action_mark_all"
-        android:icon="@drawable/ic_not_viewed"
+        android:icon="@drawable/ic_mark_as_read"
         android:orderInCategory="97"
         android:title="Mark all as read"
         app:showAsAction="never" />

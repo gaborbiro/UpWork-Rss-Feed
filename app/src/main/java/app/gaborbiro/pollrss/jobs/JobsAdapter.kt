@@ -32,13 +32,13 @@ class JobsAdapter(
         with(holder) {
             shareBtn.setImageResource(if (shareBtn.context.isPackageInstalled(PUSHBULLET_PACKAGE)) R.drawable.ic_computer else R.drawable.ic_share)
             if (job.markedAsRead) {
-                markReadBtn.setImageResource(R.drawable.ic_viewed)
+                markReadBtn.setImageResource(R.drawable.ic_unmark_as_read)
                 markReadBtn.setOnClickListener {
                     callback.onMarkedAsUnread(job)
                 }
                 markReadBtn.imageTintList = shareBtn.context.getColorStateList(R.color.black_40)
             } else {
-                markReadBtn.setImageResource(R.drawable.ic_not_viewed)
+                markReadBtn.setImageResource(R.drawable.ic_mark_as_read)
                 markReadBtn.setOnClickListener {
                     callback.onMarkedAsRead(job)
                 }

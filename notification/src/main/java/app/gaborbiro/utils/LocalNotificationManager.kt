@@ -14,7 +14,7 @@ import androidx.core.content.getSystemService
 import app.gaborbiro.pollrss.AppContextProvider
 import app.gaborbiro.pollrss.utils.PUSHBULLET_PACKAGE
 import app.gaborbiro.pollrss.utils.isPackageInstalled
-import com.piottechnologies.stationmaster.notifications.R
+import app.gaborbiro.utils.notifications.R
 
 
 object LocalNotificationManager {
@@ -100,7 +100,7 @@ object LocalNotificationManager {
         message: String?,
         priority: Int = NotificationCompat.PRIORITY_DEFAULT,
         @ColorInt color: Int = notificationColor,
-        @DrawableRes smallIcon: Int = R.drawable.ic_launcher_foreground,
+        @DrawableRes smallIcon: Int = R.drawable.notification_icon,
         alertOnlyOnce: Boolean = true,
         autoCancel: Boolean = true,
         sound: Uri? = RingtoneManager.getDefaultUri(

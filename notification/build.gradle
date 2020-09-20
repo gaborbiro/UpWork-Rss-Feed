@@ -5,6 +5,5 @@ dependencies {
     implementation project(':zcore')
     implementation project(':navigator')
 
-    implementation kotlinDeps.stdlib
     implementation androidx.coreKtx
 }

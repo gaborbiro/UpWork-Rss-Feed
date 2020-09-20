@@ -33,12 +33,11 @@ android {
 }
 
 dependencies {
-    implementation project(':zcore')
     implementation project(':rss')
     implementation project(':navigator')
     implementation project(':notification')
+    implementation project(':zcore')
 
-    implementation kotlinDeps.stdlib
     implementation kotlinDeps.reflect
 
     implementation androidx.appCompat

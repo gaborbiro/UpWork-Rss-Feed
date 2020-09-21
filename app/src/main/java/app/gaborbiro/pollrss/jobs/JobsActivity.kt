@@ -39,7 +39,12 @@ import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_jobs.*
 import kotlinx.android.synthetic.main.content_jobs.*
 import kotlinx.android.synthetic.main.dialog_filters.view.*
-import org.jetbrains.anko.*
+import org.jetbrains.anko.alert
+import org.jetbrains.anko.cancelButton
+import org.jetbrains.anko.longToast
+import org.jetbrains.anko.share
+import org.jetbrains.anko.toast
+import org.jetbrains.anko.yesButton
 import java.time.Duration
 import java.time.ZonedDateTime
 
@@ -51,6 +56,7 @@ class JobsActivity : AppCompatActivity() {
     private var newJobsSnackbar: Snackbar? = null
     private var messageToShowOnLoad: String? = null
     private var filtersMenu: MenuItem? = null
+    private var favoritesMenu: MenuItem? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,6 +67,15 @@ class JobsActivity : AppCompatActivity() {
             loadJobs()
         }
         AppPreferences.cleanupJobs()
+        AppPreferences.observeFavorites.subscribe({
+            if (it.isNotEmpty()) {
+                favoritesMenu?.iconTintList = getColorStateList(R.color.colorAccent)
+            } else {
+                favoritesMenu?.iconTintList = null
+            }
+        }, {
+            it.printStackTrace()
+        })
     }
 
     override fun onResume() {
@@ -75,6 +90,10 @@ class JobsActivity : AppCompatActivity() {
         if (progress_indicator.visibility == View.VISIBLE) {
             filtersMenu?.isVisible = false
             progress_indicator_toolbar.visibility = View.VISIBLE
+        }
+        favoritesMenu = menu.findItem(R.id.action_favorites)
+        if (AppPreferences.favorites.isNotEmpty()) {
+            favoritesMenu?.iconTintList = getColorStateList(R.color.colorAccent)
         }
 
         return super.onCreateOptionsMenu(menu)

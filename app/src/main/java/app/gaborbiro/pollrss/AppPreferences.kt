@@ -1,8 +1,10 @@
 package app.gaborbiro.pollrss
 
+import android.content.SharedPreferences
 import app.gaborbiro.pollrss.model.Job
 import com.gb.prefsutil.PrefsUtil
 import com.google.gson.Gson
+import io.reactivex.Observable
 
 object AppPreferences {
     private val prefsUtil = PrefsUtil(AppContextProvider.appContext, "app_prefs", Gson())
@@ -11,6 +13,16 @@ object AppPreferences {
         PREF_FAVORITES,
         mutableListOf<Long>()
     )
+
+    val observeFavorites: Observable<List<Long>> by lazy {
+        Observable.create<List<Long>> { emitter ->
+            prefsUtil.registerOnSharedPreferenceChangeListener(
+                PREF_FAVORITES,
+                SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+                    emitter.onNext(favorites)
+                })
+        }
+    }
 
     val jobs: MutableMap<Long, Job> by prefsUtil.mutableDelegate(
         PREF_JOBS,

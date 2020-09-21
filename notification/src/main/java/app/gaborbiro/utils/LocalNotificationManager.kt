@@ -38,7 +38,7 @@ object LocalNotificationManager {
             ).apply {
                 addAction(
                     R.drawable.ic_delete,
-                    "Mark as read",
+                    "Hide",
                     getMarkReadIntent(id)
                 )
                 val shareActionName =

@@ -2,14 +2,16 @@ package app.gaborbiro.pollrss
 
 import app.gaborbiro.pollrss.model.Job
 import com.gb.prefsutil.PrefsUtil
+import com.google.gson.Gson
 
 object AppPreferences {
-    private val prefsUtil = PrefsUtil(AppContextProvider.appContext, "app_prefs")
+    private val prefsUtil = PrefsUtil(AppContextProvider.appContext, "app_prefs", Gson())
 
     val favorites: MutableList<Long> by prefsUtil.mutableDelegate(
         PREF_FAVORITES,
         mutableListOf<Long>()
     )
+
     val jobs: MutableMap<Long, Job> by prefsUtil.mutableDelegate(
         PREF_JOBS,
         mutableMapOf<Long, Job>()

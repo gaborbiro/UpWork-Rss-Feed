@@ -11,15 +11,25 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.work.*
-import app.gaborbiro.pollrss.*
+import androidx.work.Constraints
+import androidx.work.ListenableWorker
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequest
+import androidx.work.WorkManager
+import androidx.work.WorkerParameters
+import app.gaborbiro.pollrss.App
+import app.gaborbiro.pollrss.AppPreferences
+import app.gaborbiro.pollrss.BuildConfig
 import app.gaborbiro.pollrss.R
+import app.gaborbiro.pollrss.UPWORK_RSS_URL
 import app.gaborbiro.pollrss.data.JobsMapper
 import app.gaborbiro.pollrss.favorites.FavoritesActivity
 import app.gaborbiro.pollrss.model.Job
 import app.gaborbiro.pollrss.rss.RssReader
-import app.gaborbiro.pollrss.settings.SettingsActivity
-import app.gaborbiro.pollrss.utils.*
+import app.gaborbiro.pollrss.utils.TextChangeListener
+import app.gaborbiro.pollrss.utils.epochMillis
+import app.gaborbiro.pollrss.utils.openLink
+import app.gaborbiro.pollrss.utils.toZDT
 import app.gaborbiro.utils.LocalNotificationManager
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.Maybe
@@ -179,22 +189,22 @@ class JobsActivity : AppCompatActivity() {
         setProgressVisible(true)
         jobsLoaderDisposable?.dispose()
         jobsLoaderDisposable = Maybe.create<List<Job>> { emitter ->
-                try {
-                    AppPreferences.lastRefresh = epochMillis()
-                    RssReader.read(UPWORK_RSS_URL)?.let {
-                        if (!emitter.isDisposed) {
-                            emitter.onSuccess(it.rssItems.mapNotNull(JobsMapper::map))
-                        }
-                    }
-                } catch (t: Throwable) {
+            try {
+                AppPreferences.lastRefresh = epochMillis()
+                RssReader.read(UPWORK_RSS_URL)?.let {
                     if (!emitter.isDisposed) {
-                        emitter.onError(t)
+                        emitter.onSuccess(it.rssItems.mapNotNull(JobsMapper::map))
                     }
                 }
+            } catch (t: Throwable) {
                 if (!emitter.isDisposed) {
-                    emitter.onComplete()
+                    emitter.onError(t)
                 }
             }
+            if (!emitter.isDisposed) {
+                emitter.onComplete()
+            }
+        }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnTerminate {
@@ -317,9 +327,9 @@ class JobsActivity : AppCompatActivity() {
             .build()
         val fetchRequest =
             PeriodicWorkRequest.Builder(
-                    PollRssWorker::class.java,
-                    Duration.ofMinutes(REFRESH_INTERVAL_MINS)
-                )
+                PollRssWorker::class.java,
+                Duration.ofMinutes(REFRESH_INTERVAL_MINS)
+            )
                 .addTag("PollRss")
                 .setConstraints(allConstraints)
                 .build()
@@ -331,9 +341,9 @@ class JobsActivity : AppCompatActivity() {
             .build()
         val wifiFetchRequest =
             PeriodicWorkRequest.Builder(
-                    PollRssWorker::class.java,
-                    Duration.ofMinutes(REFRESH_INTERVAL_WIFI_MINS)
-                )
+                PollRssWorker::class.java,
+                Duration.ofMinutes(REFRESH_INTERVAL_WIFI_MINS)
+            )
                 .addTag("PollRssWifiOnly")
                 .setConstraints(wifiConstraints)
                 .build()
@@ -433,10 +443,10 @@ fun shouldShowJob(job: Job): Boolean {
     val showAll =
         !AppPreferences.showUnreadOnly || (AppPreferences.markedAsRead[job.id] != true)
                 && job.localDateTime.epochMillis() > AppPreferences.lastMarkAllReadTimestamp
-    val hourly = !AppPreferences.showHourlyOnly || job.budget == null
+    val hourly = !AppPreferences.showHourlyOnly || job.fixedBudgetValue == null
     val minPay = AppPreferences.minPay
     val payGoodEnough =
-        AppPreferences.showHourlyOnly || job.budgetValue == null || job.budgetValue >= minPay
+        AppPreferences.showHourlyOnly || job.fixedBudgetValue == null || job.fixedBudgetValue >= minPay
     return showAll && hourly && payGoodEnough
 }
 

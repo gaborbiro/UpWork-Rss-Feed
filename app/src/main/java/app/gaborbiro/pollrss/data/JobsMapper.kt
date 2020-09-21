@@ -23,6 +23,7 @@ object JobsMapper {
         var countryGroups: MatchGroupCollection?
         var postedOnGroups: MatchGroupCollection?
         var linkGroups: MatchGroupCollection?
+        var budgetRangeGroups: MatchGroupCollection?
         val cleanedUpDescription = description.let {
             var temp = it
             budgetGroups = temp.getGroups("Budget")
@@ -37,6 +38,8 @@ object JobsMapper {
             temp = postedOnGroups?.get(0)?.range?.let(temp::removeRange) ?: temp
             linkGroups = Regex("<a([^<]+)</a>").find(temp)?.groups
             temp = linkGroups?.get(0)?.range?.let(temp::removeRange) ?: temp
+            budgetRangeGroups = temp.getGroups("Hourly Range")
+            temp = budgetRangeGroups?.get(0)?.range?.let(temp::removeRange) ?: temp
             temp
                 .removeTrailingBreakTags()
                 .replace(Regex("($BREAK_TAG){3,}"), "<br/><br/>")
@@ -52,10 +55,12 @@ object JobsMapper {
             id = zonedDateTime.toInstant().toEpochMilli(),
             title = rssItem.title!!.replace(" - Upwork", ""),
             link = rssItem.link!!,
-            localDateTime = zonedDateTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime(),
+            localDateTime = zonedDateTime.withZoneSameInstant(ZoneId.systemDefault())
+                .toLocalDateTime(),
             fullDescription = cleanedUpDescription,
-            budget = budgetGroups?.get(1)?.value?.cleanWS(),
-            budgetValue = budgetGroups?.get(1)?.value?.cleanWS()?.substring(1)?.replace(
+            budget = budgetGroups?.get(1)?.value?.cleanWS()
+                ?: (budgetRangeGroups?.get(1)?.value?.cleanWS()?.let { "$it /hr" }),
+            fixedBudgetValue = budgetGroups?.get(1)?.value?.cleanWS()?.substring(1)?.replace(
                 Regex("[,\\.]"),
                 ""
             )?.toInt(),

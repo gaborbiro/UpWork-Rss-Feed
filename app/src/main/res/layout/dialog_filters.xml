@@ -23,7 +23,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/medium_margin"
-        android:text="Minimum pay $"
+        android:text="Minimum budget $"
         app:layout_constraintBaseline_toBaselineOf="@id/edit_text_min_pay"
         app:layout_constraintStart_toStartOf="parent" />
 

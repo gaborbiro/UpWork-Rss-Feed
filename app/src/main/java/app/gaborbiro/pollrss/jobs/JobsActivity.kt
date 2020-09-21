@@ -26,10 +26,7 @@ import app.gaborbiro.pollrss.data.JobsMapper
 import app.gaborbiro.pollrss.favorites.FavoritesActivity
 import app.gaborbiro.pollrss.model.Job
 import app.gaborbiro.pollrss.rss.RssReader
-import app.gaborbiro.pollrss.utils.TextChangeListener
-import app.gaborbiro.pollrss.utils.epochMillis
-import app.gaborbiro.pollrss.utils.openLink
-import app.gaborbiro.pollrss.utils.toZDT
+import app.gaborbiro.pollrss.utils.*
 import app.gaborbiro.utils.LocalNotificationManager
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.Maybe
@@ -42,7 +39,6 @@ import kotlinx.android.synthetic.main.dialog_filters.view.*
 import org.jetbrains.anko.alert
 import org.jetbrains.anko.cancelButton
 import org.jetbrains.anko.longToast
-import org.jetbrains.anko.share
 import org.jetbrains.anko.toast
 import org.jetbrains.anko.yesButton
 import java.time.Duration

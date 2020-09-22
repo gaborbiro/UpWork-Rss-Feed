@@ -35,12 +35,4 @@
         android:visibility="gone"
         tools:visibility="visible"
         android:text="This is where your favorite jobs will show up" />
-
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/snackbar_host"
-        android:rotation="180"
-        android:elevation="8dp"
-        android:background="@android:color/transparent" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

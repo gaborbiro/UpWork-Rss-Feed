@@ -48,7 +48,7 @@ import java.time.ZonedDateTime
 class JobsActivity : AppCompatActivity() {
 
     private var jobsLoaderDisposable: Disposable? = null
-    private var adapter: JobsAdapter? = null
+    private lateinit var adapter: JobsAdapter
     private var newJobsSnackbar: Snackbar? = null
     private var messageToShowOnLoad: String? = null
     private var filtersMenu: MenuItem? = null
@@ -72,6 +72,7 @@ class JobsActivity : AppCompatActivity() {
         }, {
             it.printStackTrace()
         })
+        adapter = JobsAdapter(jobAdapterCallback)
     }
 
     override fun onResume() {
@@ -246,10 +247,7 @@ class JobsActivity : AppCompatActivity() {
                 AppPreferences.jobs[it.id] = it
             }
             val jobUIModels = filteredSortedJobs.map { JobsUIMapper.map(it) }
-            adapter = JobsAdapter(
-                jobUIModels.toMutableList(),
-                jobAdapterCallback
-            )
+            adapter.submitList(jobUIModels)
             recycle_view.adapter = adapter
             recycle_view.visibility = View.VISIBLE
             if (selectJobId != null) {
@@ -276,16 +274,17 @@ class JobsActivity : AppCompatActivity() {
                 Toast.LENGTH_SHORT
             ).show()
         }
-        empty.text = if (!AppPreferences.showUnreadOnly) "No jobs" else "No new jobs"
+        empty.text = if (!AppPreferences.showUnreadOnly) "No jobs" else
+            (if(AppPreferences.favorites.isEmpty()) "No new jobs" else "No new jobs\n\nCheck your Favorites")
         messageToShowOnLoad?.let {
-            makeBottomSnackBar(it, Snackbar.LENGTH_LONG).show()
+            showSnackBar(it, Snackbar.LENGTH_LONG).show()
             messageToShowOnLoad = null
         }
     }
 
     private fun setProgressVisible(visible: Boolean) {
         filtersMenu?.isVisible = !visible
-        if (adapter?.itemCount ?: 0 == 0) {
+        if (adapter.itemCount == 0) {
             progress_indicator.visibility = if (visible) View.VISIBLE else View.GONE
             progress_indicator_toolbar.visibility = View.GONE
         } else {
@@ -303,20 +302,20 @@ class JobsActivity : AppCompatActivity() {
             AppPreferences.markedAsRead[job.id] = true
             if (AppPreferences.showUnreadOnly) {
                 adapter?.removeItem(job)
-                makeBottomSnackBar("Marked as read", Snackbar.LENGTH_SHORT).show()
+                showSnackBar("Marked as read", Snackbar.LENGTH_SHORT).show()
                 if (adapter?.itemCount == 0) {
                     recycle_view.visibility = View.GONE
                     empty.visibility = View.VISIBLE
                     empty.text = "No more jobs for now"
                 }
             } else {
-                adapter?.markItemAsRead(job)
+                adapter.markItemAsRead(job)
             }
         }
 
         override fun onMarkedAsUnread(job: JobUIModel) {
             AppPreferences.markedAsRead.remove(job.id)
-            adapter?.markItemAsUnread(job)
+            adapter.markItemAsUnread(job)
         }
 
         override fun onShare(job: JobUIModel) {
@@ -327,7 +326,7 @@ class JobsActivity : AppCompatActivity() {
             AppPreferences.markedAsRead[job.id] = true
             AppPreferences.favorites.add(0, job.id)
             adapter?.removeItem(job)
-            makeBottomSnackBar("Marked as favorite", Snackbar.LENGTH_SHORT).show()
+            showSnackBar("Marked as favorite", Snackbar.LENGTH_SHORT).show()
             if (adapter?.itemCount == 0) {
                 recycle_view.visibility = View.GONE
                 empty.visibility = View.VISIBLE
@@ -378,7 +377,7 @@ class JobsActivity : AppCompatActivity() {
             }
     }
 
-    private fun makeBottomSnackBar(message: String, duration: Int): Snackbar {
+    private fun showSnackBar(message: String, duration: Int): Snackbar {
         return Snackbar.make(recycle_view, message, duration)
     }
 

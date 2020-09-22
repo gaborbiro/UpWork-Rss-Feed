@@ -7,30 +7,35 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.annotation.LayoutRes
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import app.gaborbiro.pollrss.jobs.JobUIModel
 import app.gaborbiro.pollrss.utils.shrinkBetween
 import kotlinx.android.synthetic.main.card_job_base.view.*
 
 abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
-    private val jobs: MutableList<JobUIModel>,
     private val callback: BaseJobAdapterCallback,
     @LayoutRes val itemLayout: Int
-) : RecyclerView.Adapter<VH>() {
+) : ListAdapter<JobUIModel, VH>(JobDiffCallback()) {
 
     abstract fun createViewHolder(view: View): VH
 
     fun addItem(position: Int, job: JobUIModel) {
-        jobs.add(position, job)
-        notifyItemInserted(position)
+        currentList.toMutableList().apply {
+            add(position, job)
+            submitList(this)
+        }
     }
 
-    fun indexOf(job: JobUIModel) = jobs.indexOf(job)
+    fun indexOf(job: JobUIModel) = currentList.indexOf(job)
 
     fun removeItem(job: JobUIModel): Int {
-        val position = jobs.indexOf(job)
-        jobs.remove(job)
-        notifyItemRemoved(position)
+        val position = indexOf(job)
+        currentList.toMutableList().apply {
+            remove(job)
+            submitList(this)
+        }
         return position
     }
 
@@ -41,10 +46,8 @@ abstract class BaseJobAdapter<VH : BaseJobViewHolder>(
             }
     }
 
-    override fun getItemCount() = jobs.size
-
     override fun onBindViewHolder(holder: VH, position: Int) {
-        val job = jobs[position]
+        val job = getItem(position)
         with(holder) {
             title.text = Html.fromHtml(job.title, 0)
             title.movementMethod = LinkMovementMethod.getInstance()
@@ -112,4 +115,15 @@ open class BaseJobViewHolder(view: View) : RecyclerView.ViewHolder(view) {
 
 interface BaseJobAdapterCallback {
     fun onBodyClicked(job: JobUIModel)
+}
+
+class JobDiffCallback : DiffUtil.ItemCallback<JobUIModel>() {
+
+    override fun areItemsTheSame(oldItem: JobUIModel, newItem: JobUIModel): Boolean {
+        return oldItem.id == newItem.id
+    }
+
+    override fun areContentsTheSame(oldItem: JobUIModel, newItem: JobUIModel): Boolean {
+        return oldItem == newItem
+    }
 }

@@ -11,9 +11,8 @@ import app.gaborbiro.pollrss.utils.isPackageInstalled
 import kotlinx.android.synthetic.main.card_job.view.*
 
 class JobsAdapter(
-    private val jobs: MutableList<JobUIModel>,
     private val callback: JobAdapterCallback
-) : BaseJobAdapter<JobViewHolder>(jobs, callback, R.layout.card_job) {
+) : BaseJobAdapter<JobViewHolder>(callback, R.layout.card_job) {
 
     interface JobAdapterCallback : BaseJobAdapterCallback {
         fun onMarkedAsRead(job: JobUIModel)
@@ -22,13 +21,11 @@ class JobsAdapter(
         fun onFavorite(job: JobUIModel)
     }
 
-    override fun getItemCount() = jobs.size
-
     override fun createViewHolder(view: View) = JobViewHolder(view)
 
     override fun onBindViewHolder(holder: JobViewHolder, position: Int) {
         super.onBindViewHolder(holder, position)
-        val job = jobs[position]
+        val job = getItem(position)
         with(holder) {
             shareBtn.setImageResource(if (shareBtn.context.isPackageInstalled(PUSHBULLET_PACKAGE)) R.drawable.ic_computer else R.drawable.ic_share)
             if (job.markedAsRead) {

@@ -1,6 +1,11 @@
 package app.gaborbiro.pollrss.jobs
 
-class JobUIModel(
+/**
+ * Data class needed for diffing
+ *
+ * @see [app.gaborbiro.pollrss.JobDiffCallback]
+ */
+data class JobUIModel(
     val id: Long,
     val title: String,
     val description: String,

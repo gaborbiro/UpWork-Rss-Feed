@@ -3,12 +3,10 @@ package app.gaborbiro.pollrss.favorites
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.coordinatorlayout.widget.CoordinatorLayout
 import app.gaborbiro.pollrss.AppPreferences
 import app.gaborbiro.pollrss.R
 import app.gaborbiro.pollrss.jobs.JobUIModel
@@ -46,6 +44,7 @@ class FavoritesActivity : AppCompatActivity() {
             title = "Favorites"
         }
         toolbar.setNavigationOnClickListener { finish() }
+        adapter = FavoriteJobAdapter(jobAdapterCallback)
         loadFavorites()
     }
 
@@ -58,7 +57,7 @@ class FavoritesActivity : AppCompatActivity() {
         when (item.itemId) {
             R.id.action_delete_all -> {
                 alert {
-                    message = "Are you sure you want to delete all of your favorite jobs?"
+                    message = "Are you sure you want to remove all favorites?"
                     yesButton {
                         AppPreferences.favorites.clear()
                         loadFavorites()
@@ -82,10 +81,7 @@ class FavoritesActivity : AppCompatActivity() {
     private fun loadFavorites() {
         val jobs = AppPreferences.favorites.mapNotNull { AppPreferences.jobs[it] }
         if (jobs.isNotEmpty()) {
-            adapter = FavoriteJobAdapter(
-                jobs.map(JobsUIMapper::map).toMutableList(),
-                jobAdapterCallback
-            )
+            adapter.submitList(jobs.map(JobsUIMapper::map))
             recycle_view.adapter = adapter
             recycle_view.visibility = View.VISIBLE
             empty.visibility = View.GONE
@@ -108,7 +104,7 @@ class FavoritesActivity : AppCompatActivity() {
         override fun onDelete(job: JobUIModel) {
             val position = adapter.removeItem(job)
             pendingRemoveId = job.id
-            makeTopSnackBar("Removing from favorites...", Snackbar.LENGTH_SHORT)
+            showSnackBar("Removing from favorites...", Snackbar.LENGTH_SHORT)
                 .setAction("Undo") {
                     adapter.addItem(position, job)
                 }
@@ -128,15 +124,7 @@ class FavoritesActivity : AppCompatActivity() {
         }
     }
 
-    private fun makeTopSnackBar(message: String, duration: Int): Snackbar {
-        return Snackbar.make(snackbar_host, message, duration)
-            .apply {
-                (view.layoutParams as CoordinatorLayout.LayoutParams).apply {
-                    gravity = Gravity.TOP
-                }.also {
-                    view.layoutParams = it
-                    view.rotation = 180f
-                }
-            }
+    private fun showSnackBar(message: String, duration: Int): Snackbar {
+        return Snackbar.make(recycle_view, message, duration)
     }
 }

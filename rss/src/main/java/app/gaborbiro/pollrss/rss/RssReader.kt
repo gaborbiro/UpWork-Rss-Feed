@@ -12,12 +12,12 @@ import javax.xml.parsers.SAXParserFactory
 object RssReader {
 
     @Throws(SAXException::class, IOException::class)
-    fun read(url: URL): RssFeed? {
+    fun read(url: URL): RssFeed {
         return read(url.openStream())
     }
 
     @Throws(SAXException::class, IOException::class)
-    fun read(stream: InputStream): RssFeed? {
+    fun read(stream: InputStream): RssFeed {
         try {
             val factory = SAXParserFactory.newInstance()
             val parser = factory.newSAXParser()
@@ -33,7 +33,7 @@ object RssReader {
     }
 
     @Throws(SAXException::class, IOException::class)
-    fun read(source: String): RssFeed? {
+    fun read(source: String): RssFeed {
         return read(ByteArrayInputStream(source.toByteArray()))
     }
 }

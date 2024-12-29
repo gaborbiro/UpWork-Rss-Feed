@@ -16,8 +16,7 @@ allprojects {
     repositories {
         google()
         jcenter()
-        maven { url "https://dl.bintray.com/arlecchino/maven" }
-//        mavenLocal()
+        mavenLocal()
     }
 }
 

@@ -207,7 +207,7 @@ class JobsActivity : AppCompatActivity() {
         jobsLoaderDisposable = Maybe.create<List<Job>> { emitter ->
             try {
                 AppPreferences.lastRefresh = epochMillis()
-                RssReader.read(UPWORK_RSS_URL)?.let {
+                RssReader.read(UPWORK_RSS_URL).let {
                     if (!emitter.isDisposed) {
                         emitter.onSuccess(it.rssItems.mapNotNull(JobsMapper::map))
                     }
@@ -424,7 +424,7 @@ fun checkNewJobsAndShowNotification(
     applicationContext: Context,
     forceNotification: Boolean
 ): ListenableWorker.Result {
-    RssReader.read(UPWORK_RSS_URL)?.let { rssFeed ->
+    RssReader.read(UPWORK_RSS_URL).let { rssFeed ->
         val filteredJobs = rssFeed.rssItems
             .mapNotNull(JobsMapper::map)
             .filter(::shouldShowJob)
@@ -448,8 +448,6 @@ fun checkNewJobsAndShowNotification(
             }
         }
         return ListenableWorker.Result.success()
-    } ?: run {
-        return ListenableWorker.Result.failure()
     }
 }
 
